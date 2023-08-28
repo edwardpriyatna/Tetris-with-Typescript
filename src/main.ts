@@ -44,45 +44,6 @@ type Key = "KeyS" | "KeyA" | "KeyD";
 type Event = "keydown" | "keyup" | "keypress";
 
 /** Utility functions */
-/**
- * Generates a random Tetris shape that starts touching the top edge and is within the boundaries.
- *
- * @param width Width of the game board (number of columns)
- * @returns Array of coordinates representing the Tetris shape
- */
-function generateRandomTetrisShape(width) {
-  // Define Tetris shapes as an array of arrays of relative coordinates
-  const tetrisShapes = [
-    // I-shape
-    [{ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 0, y: 2 }, { x: 0, y: 3 }],
-    // L-shape
-    [{ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 0, y: 2 }, { x: 1, y: 2 }],
-    // J-shape
-    [{ x: 1, y: 0 }, { x: 1, y: 1 }, { x: 1, y: 2 }, { x: 0, y: 2 }],
-    // O-shape
-    [{ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 0 }, { x: 1, y: 1 }],
-    // T-shape
-    [{ x: 1, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 }],
-    // S-shape
-    [{ x: 1, y: 0 }, { x: 2, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }],
-    // Z-shape
-    [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 2, y: 1 }],
-  ];
-
-  // Select a random Tetris shape
-  const randomShape = tetrisShapes[Math.floor(Math.random() * tetrisShapes.length)];
-
-  // Calculate a random starting column within the boundaries
-  const startX = Math.floor(Math.random() * (width - 1 - randomShape[0].x));
-
-  // Calculate the absolute coordinates of the Tetris shape
-  const absoluteShape = randomShape.map(({ x, y }) => ({
-    x: startX + x,
-    y: y,
-  }));
-
-  return absoluteShape;
-}
 
 /** State processing */
 
@@ -188,23 +149,32 @@ export function main() {
    *
    * @param s Current state
    */
-  const render = (s: State, tetrisShape) => {
-    // Clear the canvas before rendering
-  svg.innerHTML = '';
-
-  // Create an array of SVG rect elements for the Tetris shape
-  const tetrisElements = tetrisShape.map(({ x, y }) =>
-    createSvgElement(svg.namespaceURI, 'rect', {
+  const render = (s: State) => {
+    // Add blocks to the main grid canvas
+    const cube = createSvgElement(svg.namespaceURI, "rect", {
       height: `${Block.HEIGHT}`,
       width: `${Block.WIDTH}`,
-      x: `${Block.WIDTH * x}`,
-      y: `${Block.HEIGHT * y}`,
-      style: 'fill: green',
-    })
-  );
-
-  // Append the generated SVG elements to the canvas
-  tetrisElements.forEach(elem => svg.appendChild(elem));
+      x: "0",
+      y: "0",
+      style: "fill: green",
+    });
+    svg.appendChild(cube);
+    const cube2 = createSvgElement(svg.namespaceURI, "rect", {
+      height: `${Block.HEIGHT}`,
+      width: `${Block.WIDTH}`,
+      x: `${Block.WIDTH * (3 - 1)}`,
+      y: `${Block.HEIGHT * (20 - 1)}`,
+      style: "fill: red",
+    });
+    svg.appendChild(cube2);
+    const cube3 = createSvgElement(svg.namespaceURI, "rect", {
+      height: `${Block.HEIGHT}`,
+      width: `${Block.WIDTH}`,
+      x: `${Block.WIDTH * (4 - 1)}`,
+      y: `${Block.HEIGHT * (20 - 1)}`,
+      style: "fill: red",
+    });
+    svg.appendChild(cube3);
 
     // Add a block to the preview canvas
     const cubePreview = createSvgElement(preview.namespaceURI, "rect", {
@@ -217,13 +187,10 @@ export function main() {
     preview.appendChild(cubePreview);
   };
 
-  const tetrisShape = generateRandomTetrisShape(Constants.GRID_WIDTH);
-  render(initialState, tetrisShape);
-
   const source$ = merge(tick$)
     .pipe(scan((s: State) => ({ gameEnd: true }), initialState))
     .subscribe((s: State) => {
-      render(s, tetrisShape);
+      render(s);
 
       if (s.gameEnd) {
         show(gameover);
