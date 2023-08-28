@@ -44,15 +44,36 @@ type Key = "KeyS" | "KeyA" | "KeyD";
 type Event = "keydown" | "keyup" | "keypress";
 
 /** Utility functions */
+type Coordinate = { x: number; y: number };
+type Square = { x: number; y: number };
+
+function createSquareBlock(): Square[] {
+  const center: Coordinate = {
+    x: Math.floor(Constants.GRID_WIDTH / 2),
+    y: 0, // Place the square block at the top edge
+  };
+
+  const squares: Square[] = [
+    { x: center.x - 1, y: center.y },
+    { x: center.x, y: center.y },
+    { x: center.x - 1, y: center.y + 1 },
+    { x: center.x, y: center.y + 1 },
+  ];
+  return squares;
+}
 
 /** State processing */
 
 type State = Readonly<{
   gameEnd: boolean;
+  gameState: (null | any)[][];
 }>;
 
 const initialState: State = {
   gameEnd: false,
+  gameState: Array.from({ length: Constants.GRID_HEIGHT }, () =>
+    Array(Constants.GRID_WIDTH).fill(null)
+  ),
 } as const;
 
 /**
@@ -150,31 +171,23 @@ export function main() {
    * @param s Current state
    */
   const render = (s: State) => {
-    // Add blocks to the main grid canvas
-    const cube = createSvgElement(svg.namespaceURI, "rect", {
-      height: `${Block.HEIGHT}`,
-      width: `${Block.WIDTH}`,
-      x: "0",
-      y: "0",
-      style: "fill: green",
+    // Example usage of createSquareBlock
+    const squareBlock: Square[] = createSquareBlock();
+
+    squareBlock.forEach(square => {
+      const xCoordinate = square.x * Block.WIDTH;
+      const yCoordinate = square.y * Block.HEIGHT;
+
+      const squareElement = createSvgElement(svg.namespaceURI, "rect", {
+        height: `${Block.HEIGHT}`,
+        width: `${Block.WIDTH}`,
+        x: `${xCoordinate}`,
+        y: `${yCoordinate}`,
+        style: "fill: green", // Customize the color as needed
+      });
+
+      svg.appendChild(squareElement);
     });
-    svg.appendChild(cube);
-    const cube2 = createSvgElement(svg.namespaceURI, "rect", {
-      height: `${Block.HEIGHT}`,
-      width: `${Block.WIDTH}`,
-      x: `${Block.WIDTH * (3 - 1)}`,
-      y: `${Block.HEIGHT * (20 - 1)}`,
-      style: "fill: red",
-    });
-    svg.appendChild(cube2);
-    const cube3 = createSvgElement(svg.namespaceURI, "rect", {
-      height: `${Block.HEIGHT}`,
-      width: `${Block.WIDTH}`,
-      x: `${Block.WIDTH * (4 - 1)}`,
-      y: `${Block.HEIGHT * (20 - 1)}`,
-      style: "fill: red",
-    });
-    svg.appendChild(cube3);
 
     // Add a block to the preview canvas
     const cubePreview = createSvgElement(preview.namespaceURI, "rect", {
