@@ -71,15 +71,16 @@ const moveSquareDown = (square: Square[]): Square[] => {
 };
 
 /** State processing */
-
 type State = Readonly<{
   gameEnd: boolean;
   gameState: (null | any)[][];
+  currentSquare: Square[]; // Add a property to store the current square
 }>;
 
 const initialState: State = {
   gameEnd: false,
   gameState: Array.from({ length: Constants.GRID_HEIGHT }, () => Array(Constants.GRID_WIDTH).fill(null)),
+  currentSquare: createSquareBlock(), // Initialize the current square
 } as const;
 
 /**
@@ -88,28 +89,30 @@ const initialState: State = {
  * @param s Current state
  * @returns Updated state
  */
-function tick(s: State, square: Square[]): State {
+function tick(s: State): State {
   if (!s.gameEnd) {
-    // Update initialState to store falling squares
-    square.forEach(sq => {
+    const newCurrentSquare = moveSquareDown(s.currentSquare); // Move the current square
+
+    // Check if the current square has reached the bottom
+    const isCurrentSquareAtBottom = newCurrentSquare.some(sq => sq.y >= Constants.GRID_HEIGHT - 1);
+
+    // If the current square has reached the bottom, generate a new squareBlock
+    const updatedCurrentSquare = isCurrentSquareAtBottom ? createSquareBlock() : newCurrentSquare;
+
+    // Update the gameState based on the updatedCurrentSquare position
+    updatedCurrentSquare.forEach(sq => {
       if (sq.y >= 0 && sq.y < Constants.GRID_HEIGHT) {
         s.gameState[sq.y][sq.x] = true;
       }
     });
 
-    // Move the entire square block down
-    const newSquare = moveSquareDown(square);
-
-    // Modify properties of `s` and return the updated state
-    newSquare.forEach(sq => {
-      if (sq.y >= 0 && sq.y < Constants.GRID_HEIGHT) {
-        s.gameState[sq.y][sq.x] = true;
-      }
-    });
-
-    return s;
+    // Update the state with the new updatedCurrentSquare
+    return {
+      ...s,
+      currentSquare: updatedCurrentSquare,
+    };
   }
-  
+
   // Only return the original state if the game has ended
   return s;
 }
@@ -232,7 +235,7 @@ export function main() {
 
   const source$ = merge(tick$)
   .pipe(
-    scan((s: State) => tick(s, createSquareBlock()), initialState)
+    scan((s: State) => tick(s), initialState)
   ).subscribe((s: State) => {
     render(s);
 
