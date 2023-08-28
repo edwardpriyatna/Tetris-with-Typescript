@@ -45,6 +45,7 @@ type Event = "keydown" | "keyup" | "keypress";
 
 /** Utility functions */
 type Coordinate = { x: number; y: number };
+
 type Square = { x: number; y: number };
 
 function createSquareBlock(): Square[] {
@@ -62,6 +63,13 @@ function createSquareBlock(): Square[] {
   return squares;
 }
 
+const moveSquareDown = (square: Square[]): Square[] => {
+  return square.map(sq => ({
+    x: sq.x,
+    y: sq.y + 1,
+  }));
+};
+
 /** State processing */
 
 type State = Readonly<{
@@ -71,9 +79,7 @@ type State = Readonly<{
 
 const initialState: State = {
   gameEnd: false,
-  gameState: Array.from({ length: Constants.GRID_HEIGHT }, () =>
-    Array(Constants.GRID_WIDTH).fill(null)
-  ),
+  gameState: Array.from({ length: Constants.GRID_HEIGHT }, () => Array(Constants.GRID_WIDTH).fill(null)),
 } as const;
 
 /**
@@ -82,7 +88,31 @@ const initialState: State = {
  * @param s Current state
  * @returns Updated state
  */
-const tick = (s: State) => s;
+function tick(s: State, square: Square[]): State {
+  if (!s.gameEnd) {
+    // Update initialState to store falling squares
+    square.forEach(sq => {
+      if (sq.y >= 0 && sq.y < Constants.GRID_HEIGHT) {
+        s.gameState[sq.y][sq.x] = true;
+      }
+    });
+
+    // Move the entire square block down
+    const newSquare = moveSquareDown(square);
+
+    // Modify properties of `s` and return the updated state
+    newSquare.forEach(sq => {
+      if (sq.y >= 0 && sq.y < Constants.GRID_HEIGHT) {
+        s.gameState[sq.y][sq.x] = true;
+      }
+    });
+
+    return s;
+  }
+  
+  // Only return the original state if the game has ended
+  return s;
+}
 
 /** Rendering (side effects) */
 
@@ -201,16 +231,17 @@ export function main() {
   };
 
   const source$ = merge(tick$)
-    .pipe(scan((s: State) => ({ gameEnd: true }), initialState))
-    .subscribe((s: State) => {
-      render(s);
+  .pipe(
+    scan((s: State) => tick(s, createSquareBlock()), initialState)
+  ).subscribe((s: State) => {
+    render(s);
 
-      if (s.gameEnd) {
-        show(gameover);
-      } else {
-        hide(gameover);
-      }
-    });
+    if (s.gameEnd) {
+      show(gameover);
+    } else {
+      hide(gameover);
+    }
+  });
 }
 
 // The following simply runs your main function on window load.  Make sure to leave it in place.
