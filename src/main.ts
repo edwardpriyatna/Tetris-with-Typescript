@@ -70,6 +70,14 @@ const moveSquareDown = (square: Square[]): Square[] => {
   }));
 };
 
+function updateGameState(squares: Square[], gameState: (null | any)[][], value: boolean | null): void {
+  squares.forEach(sq => {
+    if (sq.y >= 0 && sq.y < Constants.GRID_HEIGHT) {
+      gameState[sq.y][sq.x] = value;
+    }
+  });
+}
+
 /** State processing */
 type State = Readonly<{
   gameEnd: boolean;
@@ -90,38 +98,29 @@ const initialState: State = {
  * @returns Updated state
  */
 function tick(s: State): State {
-  if (!s.gameEnd) {
-    // Store the coordinates of the currentSquare in gameState
-    s.currentSquare.forEach(sq => {
-      if (sq.y >= 0 && sq.y < Constants.GRID_HEIGHT) {
-        s.gameState[sq.y][sq.x] = true;
-      }
-    });
+  // Update game state based on the current square's position
+  updateGameState(s.currentSquare, s.gameState, null); // Clear current square
 
-    // Check if the currentSquare has reached the bottom
-    const isCurrentSquareAtBottom = s.currentSquare.some(sq => sq.y >= Constants.GRID_HEIGHT - 1);
+  // Check if the current square has reached the bottom
+  const isCurrentSquareAtBottom = s.currentSquare.some(sq => sq.y >= Constants.GRID_HEIGHT - 1);
 
-    // If the currentSquare has reached the bottom, generate a new squareBlock
-    const updatedCurrentSquare = isCurrentSquareAtBottom ? createSquareBlock() : moveSquareDown(s.currentSquare);
-
-    // Update the gameState based on the updatedCurrentSquare position
-    updatedCurrentSquare.forEach(sq => {
-      if (sq.y >= 0 && sq.y < Constants.GRID_HEIGHT) {
-        s.gameState[sq.y][sq.x] = true;
-      }
-    });
-
-    // Update the state with the new updatedCurrentSquare
+  if (isCurrentSquareAtBottom) {
+    // Update game state and create a new square
+    updateGameState(s.currentSquare, s.gameState, true); // Fill new square
+    const newCurrentSquare = createSquareBlock();
     return {
       ...s,
-      currentSquare: updatedCurrentSquare,
+      currentSquare: newCurrentSquare,
+    };
+  } else {
+    // Move the current square down
+    const newCurrentSquare = moveSquareDown(s.currentSquare);
+    return {
+      ...s,
+      currentSquare: newCurrentSquare,
     };
   }
-
-  // Only return the original state if the game has ended
-  return s;
 }
-
 
 /** Rendering (side effects) */
 
