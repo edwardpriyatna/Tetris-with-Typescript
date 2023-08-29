@@ -91,13 +91,18 @@ const initialState: State = {
  */
 function tick(s: State): State {
   if (!s.gameEnd) {
-    const newCurrentSquare = moveSquareDown(s.currentSquare); // Move the current square
+    // Store the coordinates of the currentSquare in gameState
+    s.currentSquare.forEach(sq => {
+      if (sq.y >= 0 && sq.y < Constants.GRID_HEIGHT) {
+        s.gameState[sq.y][sq.x] = true;
+      }
+    });
 
-    // Check if the current square has reached the bottom
-    const isCurrentSquareAtBottom = newCurrentSquare.some(sq => sq.y >= Constants.GRID_HEIGHT - 1);
+    // Check if the currentSquare has reached the bottom
+    const isCurrentSquareAtBottom = s.currentSquare.some(sq => sq.y >= Constants.GRID_HEIGHT - 1);
 
-    // If the current square has reached the bottom, generate a new squareBlock
-    const updatedCurrentSquare = isCurrentSquareAtBottom ? createSquareBlock() : newCurrentSquare;
+    // If the currentSquare has reached the bottom, generate a new squareBlock
+    const updatedCurrentSquare = isCurrentSquareAtBottom ? createSquareBlock() : moveSquareDown(s.currentSquare);
 
     // Update the gameState based on the updatedCurrentSquare position
     updatedCurrentSquare.forEach(sq => {
@@ -116,6 +121,7 @@ function tick(s: State): State {
   // Only return the original state if the game has ended
   return s;
 }
+
 
 /** Rendering (side effects) */
 
@@ -204,13 +210,14 @@ export function main() {
    * @param s Current state
    */
   const render = (s: State) => {
-    // Example usage of createSquareBlock
-    const squareBlock: Square[] = createSquareBlock();
-
-    squareBlock.forEach(square => {
+    // Clear the SVG canvas
+    svg.innerHTML = '';
+  
+    // Render the currentSquare from the state
+    s.currentSquare.forEach(square => {
       const xCoordinate = square.x * Block.WIDTH;
       const yCoordinate = square.y * Block.HEIGHT;
-
+  
       const squareElement = createSvgElement(svg.namespaceURI, "rect", {
         height: `${Block.HEIGHT}`,
         width: `${Block.WIDTH}`,
@@ -218,10 +225,10 @@ export function main() {
         y: `${yCoordinate}`,
         style: "fill: green", // Customize the color as needed
       });
-
+  
       svg.appendChild(squareElement);
     });
-
+  
     // Add a block to the preview canvas
     const cubePreview = createSvgElement(preview.namespaceURI, "rect", {
       height: `${Block.HEIGHT}`,
@@ -231,7 +238,7 @@ export function main() {
       style: "fill: green",
     });
     preview.appendChild(cubePreview);
-  };
+  };  
 
   const source$ = merge(tick$)
   .pipe(
