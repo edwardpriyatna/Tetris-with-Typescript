@@ -80,6 +80,24 @@ function updateGameState(squares: Square[], gameState: (null | any)[][], value: 
   return updatedGameState;
 }
 
+function checkCollision(square: Square[], gameState: (null | any)[][]): boolean {
+  return square.some(sq => {
+    const { x, y } = sq;
+
+    // Check if the square is at the bottom of the grid
+    if (y >= Constants.GRID_HEIGHT - 1) {
+      return true;
+    }
+
+    // Check if there's a block below the current square
+    if (gameState[y + 1][x] !== null) {
+      return true;
+    }
+
+    return false;
+  });
+}
+
 /** State processing */
 type State = Readonly<{
   gameEnd: boolean;
@@ -103,10 +121,10 @@ function tick(s: State): State {
   // Update game state based on the current square's position
   const clearedGameState = updateGameState(s.currentSquare, s.gameState, null);
 
-  // Check if the current square has reached the bottom
-  const isCurrentSquareAtBottom = s.currentSquare.some(sq => sq.y >= Constants.GRID_HEIGHT - 1);
+  // Check for collision or if the square is at the bottom
+  const hasCollisionOrAtBottom = checkCollision(s.currentSquare, clearedGameState);
 
-  if (isCurrentSquareAtBottom) {
+  if (hasCollisionOrAtBottom) {
     // Update game state and create a new square
     const filledGameState = updateGameState(s.currentSquare, clearedGameState, true);
     const newCurrentSquare = createSquareBlock();
