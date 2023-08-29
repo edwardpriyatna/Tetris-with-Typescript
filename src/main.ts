@@ -54,7 +54,7 @@ function createSquareBlock(): Square[] {
     y: 0, // Place the square block at the top edge
   };
 
-  const squares: Square[] = [
+const squares: Square[] = [
     { x: center.x - 1, y: center.y },
     { x: center.x, y: center.y },
     { x: center.x - 1, y: center.y + 1 },
@@ -70,12 +70,14 @@ const moveSquareDown = (square: Square[]): Square[] => {
   }));
 };
 
-function updateGameState(squares: Square[], gameState: (null | any)[][], value: boolean | null): void {
+function updateGameState(squares: Square[], gameState: (null | any)[][], value: boolean | null): (null | any)[][] {
+  const updatedGameState = [...gameState.map(row => [...row])];
   squares.forEach(sq => {
     if (sq.y >= 0 && sq.y < Constants.GRID_HEIGHT) {
-      gameState[sq.y][sq.x] = value;
+      updatedGameState[sq.y][sq.x] = value;
     }
   });
+  return updatedGameState;
 }
 
 /** State processing */
@@ -99,17 +101,18 @@ const initialState: State = {
  */
 function tick(s: State): State {
   // Update game state based on the current square's position
-  updateGameState(s.currentSquare, s.gameState, null); // Clear current square
+  const clearedGameState = updateGameState(s.currentSquare, s.gameState, null);
 
   // Check if the current square has reached the bottom
   const isCurrentSquareAtBottom = s.currentSquare.some(sq => sq.y >= Constants.GRID_HEIGHT - 1);
 
   if (isCurrentSquareAtBottom) {
     // Update game state and create a new square
-    updateGameState(s.currentSquare, s.gameState, true); // Fill new square
+    const filledGameState = updateGameState(s.currentSquare, clearedGameState, true);
     const newCurrentSquare = createSquareBlock();
     return {
       ...s,
+      gameState: filledGameState,
       currentSquare: newCurrentSquare,
     };
   } else {
@@ -117,6 +120,7 @@ function tick(s: State): State {
     const newCurrentSquare = moveSquareDown(s.currentSquare);
     return {
       ...s,
+      gameState: clearedGameState,
       currentSquare: newCurrentSquare,
     };
   }
@@ -202,44 +206,65 @@ export function main() {
   const tick$ = interval(Constants.TICK_RATE_MS);
 
   /**
-   * Renders the current state to the canvas.
-   *
-   * In MVC terms, this updates the View using the Model.
-   *
-   * @param s Current state
-   */
-  const render = (s: State) => {
-    // Clear the SVG canvas
-    svg.innerHTML = '';
-  
-    // Render the currentSquare from the state
-    s.currentSquare.forEach(square => {
-      const xCoordinate = square.x * Block.WIDTH;
-      const yCoordinate = square.y * Block.HEIGHT;
-  
-      const squareElement = createSvgElement(svg.namespaceURI, "rect", {
-        height: `${Block.HEIGHT}`,
-        width: `${Block.WIDTH}`,
-        x: `${xCoordinate}`,
-        y: `${yCoordinate}`,
-        style: "fill: green", // Customize the color as needed
-      });
-  
-      svg.appendChild(squareElement);
+ * Renders the current state to the canvas.
+ *
+ * In MVC terms, this updates the View using the Model.
+ *
+ * @param s Current state
+ */
+const render = (s: State) => {
+  // Clear the SVG canvas
+  svg.innerHTML = '';
+
+  // Iterate through the game state and render squares as needed
+  s.gameState.forEach((row, rowIndex) => {
+    row.forEach((cell, columnIndex) => {
+      if (cell === true) {
+        const xCoordinate = columnIndex * Block.WIDTH;
+        const yCoordinate = rowIndex * Block.HEIGHT;
+
+        const squareElement = createSvgElement(svg.namespaceURI, "rect", {
+          height: `${Block.HEIGHT}`,
+          width: `${Block.WIDTH}`,
+          x: `${xCoordinate}`,
+          y: `${yCoordinate}`,
+          style: "fill: green", // Customize the color as needed
+        });
+
+        svg.appendChild(squareElement);
+      }
     });
-  
-    // Add a block to the preview canvas
-    const cubePreview = createSvgElement(preview.namespaceURI, "rect", {
+  });
+
+  // Render the currentSquare from the state
+  s.currentSquare.forEach(square => {
+    const xCoordinate = square.x * Block.WIDTH;
+    const yCoordinate = square.y * Block.HEIGHT;
+
+    const squareElement = createSvgElement(svg.namespaceURI, "rect", {
       height: `${Block.HEIGHT}`,
       width: `${Block.WIDTH}`,
-      x: `${Block.WIDTH * 2}`,
-      y: `${Block.HEIGHT}`,
-      style: "fill: green",
+      x: `${xCoordinate}`,
+      y: `${yCoordinate}`,
+      style: "fill: green", // Customize the color as needed
     });
-    preview.appendChild(cubePreview);
-  };  
 
-  const source$ = merge(tick$)
+    svg.appendChild(squareElement);
+  });
+
+  // Add a block to the preview canvas
+  const cubePreview = createSvgElement(preview.namespaceURI, "rect", {
+    height: `${Block.HEIGHT}`,
+    width: `${Block.WIDTH}`,
+    x: `${Block.WIDTH * 2}`,
+    y: `${Block.HEIGHT}`,
+    style: "fill: green",
+  });
+  preview.appendChild(cubePreview);
+};
+ 
+
+const source$ = merge(tick$)
   .pipe(
     scan((s: State) => tick(s), initialState)
   ).subscribe((s: State) => {
