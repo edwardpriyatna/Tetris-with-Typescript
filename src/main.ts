@@ -100,31 +100,61 @@ function checkCollision(square: Square[], gameState: (null | any)[][]): boolean 
 
 // moveLeft function
 const moveLeft = (s: State): State => {
-  // Logic to move the square to the left
-  // Update the currentSquare coordinates accordingly
-  return updatedState; // Return the updated state
+  const canMoveLeft = s.currentSquare.every((square) =>
+    square.x > 0 && !s.gameState[square.y][square.x - 1]
+  );
+
+  if (canMoveLeft) {
+    const newCurrentSquare = s.currentSquare.map((square) => ({
+      x: square.x - 1,
+      y: square.y,
+    }));
+    return { ...s, currentSquare: newCurrentSquare };
+  }
+
+  return s;
 };
 
 // moveRight function
 const moveRight = (s: State): State => {
-  // Logic to move the square to the right
-  // Update the currentSquare coordinates accordingly
-  return updatedState; // Return the updated state
+  const canMoveRight = s.currentSquare.every((square) =>
+    square.x < Constants.GRID_WIDTH - 1 && !s.gameState[square.y][square.x + 1]
+  );
+
+  if (canMoveRight) {
+    const newCurrentSquare = s.currentSquare.map((square) => ({
+      x: square.x + 1,
+      y: square.y,
+    }));
+    return { ...s, currentSquare: newCurrentSquare };
+  }
+
+  return s;
 };
 
 // calculateDownDistance function
-const calculateDownDistance = (s: State): number => {
-  // Logic to calculate the distance the square can move down
-  return distance; // Return the calculated distance
+const calculateDownDistance = (s: State, distance = 0): number => {
+  // Base case: if collision is detected, return the distance
+  if (checkCollision(falling(s.currentSquare), s.gameState)) {
+    return distance;
+  }
+  // Recursive case: increment distance and continue checking
+  return calculateDownDistance({ ...s, currentSquare: falling(s.currentSquare) }, distance + 1);
 };
 
 // moveDown function
 const moveDown = (s: State): State => {
   const downDistance = calculateDownDistance(s);
 
-  // Logic to move the square down by the calculated distance
-  // Update the currentSquare coordinates accordingly
-  return updatedState; // Return the updated state
+  const newCurrentSquare = s.currentSquare.map((square) => ({
+    x: square.x,
+    y: square.y + downDistance,
+  }));
+
+  return {
+    ...s,
+    currentSquare: newCurrentSquare,
+  };
 };
 
 /** State processing */
@@ -238,16 +268,15 @@ export function main() {
 
   /** User input */
 
-  const key$ = fromEvent<KeyboardEvent>(document, "keypress");
 
+  /** Observables */
+  const key$ = fromEvent<KeyboardEvent>(document, "keypress");
   const fromKey = (keyCode: Key) =>
     key$.pipe(filter(({ code }) => code === keyCode));
-
   const left$ = fromKey("KeyA");
   const right$ = fromKey("KeyD");
   const down$ = fromKey("KeyS");
-
-   /** Observables */
+   
 
   /** Determines the rate of time steps */
   const tick$ = interval(Constants.TICK_RATE_MS);
@@ -310,19 +339,25 @@ const render = (s: State) => {
   preview.appendChild(cubePreview);
 };
  
-const source$ = tick$.pipe(
-  scan((s: State, action: (s: State) => State) => action(s), initialState)
-);
+  /** Observables and subscription */
+  const source$ = merge(
+    tick$.pipe(map(() => (state: State) => tick(state))),
+    left$.pipe(map(() => (state: State) => moveLeft(state))),
+    right$.pipe(map(() => (state: State) => moveRight(state))),
+    down$.pipe(map(() => (state: State) => moveDown(state)))
+  ).pipe(
+    scan((s: State, action: (s: State) => State) => action(s), initialState)
+  );
 
-source$.subscribe((s: State) => {
-  render(s);
+  source$.subscribe((s: State) => {
+    render(s);
 
-  if (s.gameEnd) {
-    show(gameover);
-  } else {
-    hide(gameover);
-  }
-});
+    if (s.gameEnd) {
+      show(gameover);
+    } else {
+      hide(gameover);
+    }
+  });
 }
 
 // The following simply runs your main function on window load.  Make sure to leave it in place.
