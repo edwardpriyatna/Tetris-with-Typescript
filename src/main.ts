@@ -63,7 +63,7 @@ const squares: Square[] = [
   return squares;
 }
 
-const moveSquareDown = (square: Square[]): Square[] => {
+const falling = (square: Square[]): Square[] => {
   return square.map(sq => ({
     x: sq.x,
     y: sq.y + 1,
@@ -97,6 +97,35 @@ function checkCollision(square: Square[], gameState: (null | any)[][]): boolean 
     return false;
   });
 }
+
+// moveLeft function
+const moveLeft = (s: State): State => {
+  // Logic to move the square to the left
+  // Update the currentSquare coordinates accordingly
+  return updatedState; // Return the updated state
+};
+
+// moveRight function
+const moveRight = (s: State): State => {
+  // Logic to move the square to the right
+  // Update the currentSquare coordinates accordingly
+  return updatedState; // Return the updated state
+};
+
+// calculateDownDistance function
+const calculateDownDistance = (s: State): number => {
+  // Logic to calculate the distance the square can move down
+  return distance; // Return the calculated distance
+};
+
+// moveDown function
+const moveDown = (s: State): State => {
+  const downDistance = calculateDownDistance(s);
+
+  // Logic to move the square down by the calculated distance
+  // Update the currentSquare coordinates accordingly
+  return updatedState; // Return the updated state
+};
 
 /** State processing */
 type State = Readonly<{
@@ -135,7 +164,7 @@ function tick(s: State): State {
     };
   } else {
     // Move the current square down
-    const newCurrentSquare = moveSquareDown(s.currentSquare);
+    const newCurrentSquare = falling(s.currentSquare);
     return {
       ...s,
       gameState: clearedGameState,
@@ -218,7 +247,7 @@ export function main() {
   const right$ = fromKey("KeyD");
   const down$ = fromKey("KeyS");
 
-  /** Observables */
+   /** Observables */
 
   /** Determines the rate of time steps */
   const tick$ = interval(Constants.TICK_RATE_MS);
@@ -281,19 +310,19 @@ const render = (s: State) => {
   preview.appendChild(cubePreview);
 };
  
+const source$ = tick$.pipe(
+  scan((s: State, action: (s: State) => State) => action(s), initialState)
+);
 
-const source$ = merge(tick$)
-  .pipe(
-    scan((s: State) => tick(s), initialState)
-  ).subscribe((s: State) => {
-    render(s);
+source$.subscribe((s: State) => {
+  render(s);
 
-    if (s.gameEnd) {
-      show(gameover);
-    } else {
-      hide(gameover);
-    }
-  });
+  if (s.gameEnd) {
+    show(gameover);
+  } else {
+    hide(gameover);
+  }
+});
 }
 
 // The following simply runs your main function on window load.  Make sure to leave it in place.
