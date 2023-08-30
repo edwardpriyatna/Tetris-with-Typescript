@@ -185,13 +185,17 @@ function moveSquaresAboveClearedLines(gameState: (null | any)[][]): (null | any)
 type State = Readonly<{
   gameEnd: boolean;
   gameState: (null | any)[][];
-  currentSquare: Square[]; // Add a property to store the current square
+  currentSquare: Square[];
+  score: number; // Add the score property
 }>;
 
 const initialState: State = {
   gameEnd: false,
-  gameState: Array.from({ length: Constants.GRID_HEIGHT }, () => Array(Constants.GRID_WIDTH).fill(null)),
-  currentSquare: createSquareBlock(), // Initialize the current square
+  gameState: Array.from({ length: Constants.GRID_HEIGHT }, () =>
+    Array(Constants.GRID_WIDTH).fill(null)
+  ),
+  currentSquare: createSquareBlock(),
+  score: 0, // Initialize the score property
 } as const;
 
 /**
@@ -371,6 +375,11 @@ const render = (s: State) => {
     style: "fill: green",
   });
   preview.appendChild(cubePreview);
+
+  const scoreTextElement = document.querySelector("#scoreText") as HTMLElement;
+  if (scoreTextElement) {
+    scoreTextElement.textContent = `1`; // Update to display Score: 10
+  }
 };
  
   /** Observables and subscription */
