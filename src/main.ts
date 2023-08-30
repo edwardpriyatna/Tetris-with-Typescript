@@ -136,7 +136,7 @@ const moveRight = (s: State): State => {
 const calculateDownDistance = (s: State, distance = 0): number => {
   // Base case: if collision is detected, return the distance
   if (checkCollision(falling(s.currentSquare), s.gameState)) {
-    return distance;
+    return distance+1;
   }
   // Recursive case: increment distance and continue checking
   return calculateDownDistance({ ...s, currentSquare: falling(s.currentSquare) }, distance + 1);
