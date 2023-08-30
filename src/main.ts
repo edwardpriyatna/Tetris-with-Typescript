@@ -157,6 +157,12 @@ const moveDown = (s: State): State => {
   };
 };
 
+function clearFullLines(gameState: (null | any)[][]): (null | any)[][] {
+  return gameState.filter(row => row.some(cell => cell !== null)).map(row =>
+    row.every(cell => cell !== null) ? Array(Constants.GRID_WIDTH).fill(null) : row
+  );
+}
+
 /** State processing */
 type State = Readonly<{
   gameEnd: boolean;
@@ -186,6 +192,7 @@ function tick(s: State): State {
   if (hasCollisionOrAtBottom) {
     // Update game state and create a new square
     const filledGameState = updateGameState(s.currentSquare, clearedGameState, true);
+    
     const newCurrentSquare = createSquareBlock();
     return {
       ...s,
@@ -277,7 +284,6 @@ export function main() {
   const right$ = fromKey("KeyD");
   const down$ = fromKey("KeyS");
    
-
   /** Determines the rate of time steps */
   const tick$ = interval(Constants.TICK_RATE_MS);
 
