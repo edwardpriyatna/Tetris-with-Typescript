@@ -158,9 +158,27 @@ const moveDown = (s: State): State => {
 };
 
 function clearFullLines(gameState: (null | any)[][]): (null | any)[][] {
-  return gameState.filter(row => row.some(cell => cell !== null)).map(row =>
-    row.every(cell => cell !== null) ? Array(Constants.GRID_WIDTH).fill(null) : row
-  );
+  return gameState
+    .filter(row => row.some(cell => cell !== null))
+    .map(row =>
+      row.every(cell => cell !== null) ? Array(Constants.GRID_WIDTH).fill(null) : row
+    );
+}
+
+function moveSquaresAboveClearedLines(gameState: (null | any)[][]): (null | any)[][] {
+  const filledRows = gameState.filter(row => row.some(cell => cell !== null));
+  const clearedRowsCount = Constants.GRID_HEIGHT - filledRows.length;
+
+  if (clearedRowsCount > 0) {
+    const newGameState = Array(clearedRowsCount)
+      .fill(null)
+      .map(() => Array(Constants.GRID_WIDTH).fill(null));
+
+    const remainingRows = gameState.filter(row => row.some(cell => cell !== null));
+    return newGameState.concat(remainingRows);
+  }
+
+  return gameState;
 }
 
 /** State processing */
@@ -184,27 +202,37 @@ const initialState: State = {
  */
 function tick(s: State): State {
   // Update game state based on the current square's position
-  const clearedGameState = updateGameState(s.currentSquare, s.gameState, null);
+  const updatedGameState = updateGameState(s.currentSquare, s.gameState, null);
 
   // Check for collision or if the square is at the bottom
-  const hasCollisionOrAtBottom = checkCollision(s.currentSquare, clearedGameState);
+  const hasCollisionOrAtBottom = checkCollision(s.currentSquare, updatedGameState);
 
   if (hasCollisionOrAtBottom) {
+    // Store the current square's position
+    const filledGameState = updateGameState(s.currentSquare, updatedGameState, true);
+
+    // Clear full lines and move squares above
+    const gameStateWithClearedLines = clearFullLines(filledGameState);
+    const gameStateWithMovedSquares = moveSquaresAboveClearedLines(gameStateWithClearedLines);
+
     // Update game state and create a new square
-    const filledGameState = updateGameState(s.currentSquare, clearedGameState, true);
-    
     const newCurrentSquare = createSquareBlock();
     return {
       ...s,
-      gameState: filledGameState,
+      gameState: gameStateWithMovedSquares,
       currentSquare: newCurrentSquare,
     };
   } else {
     // Move the current square down
     const newCurrentSquare = falling(s.currentSquare);
+
+    // Clear full lines and move squares above
+    const gameStateWithClearedLines = clearFullLines(updatedGameState);
+    const gameStateWithMovedSquares = moveSquaresAboveClearedLines(gameStateWithClearedLines);
+
     return {
       ...s,
-      gameState: clearedGameState,
+      gameState: gameStateWithMovedSquares,
       currentSquare: newCurrentSquare,
     };
   }
