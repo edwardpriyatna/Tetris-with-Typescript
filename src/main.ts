@@ -63,39 +63,34 @@ const squares: Square[] = [
   return squares;
 }
 
-const falling = (state: State): State => {
-  const newCurrentSquare = state.currentSquare.map(sq => ({
+const falling = (square: Square[]): Square[] => {
+  return square.map(sq => ({
     x: sq.x,
     y: sq.y + 1,
   }));
-  return {
-    ...state,
-    currentSquare: newCurrentSquare,
-  };
 };
 
-function updateGameState(squares: Square[], state: State, value: boolean | null): State {
-  const updatedGameState = [...state.gameState.map(row => [...row])];
+function updateGameState(squares: Square[], gameState: (null | any)[][], value: boolean | null): (null | any)[][] {
+  const updatedGameState = [...gameState.map(row => [...row])];
   squares.forEach(sq => {
     if (sq.y >= 0 && sq.y < Constants.GRID_HEIGHT) {
       updatedGameState[sq.y][sq.x] = value;
     }
   });
-  return {
-    ...state,
-    gameState: updatedGameState,
-  };
+  return updatedGameState;
 }
 
-function checkCollision(state: State): boolean {
-  return state.currentSquare.some(sq => {
+function checkCollision(square: Square[], gameState: (null | any)[][]): boolean {
+  return square.some(sq => {
     const { x, y } = sq;
 
+    // Check if the square is at the bottom of the grid
     if (y >= Constants.GRID_HEIGHT - 1) {
       return true;
     }
 
-    if (state.gameState[y + 1][x] !== null) {
+    // Check if there's a block below the current square
+    if (gameState[y + 1][x] !== null) {
       return true;
     }
 
@@ -104,46 +99,48 @@ function checkCollision(state: State): boolean {
 }
 
 // moveLeft function
-const moveLeft = (state: State): State => {
-  const canMoveLeft = state.currentSquare.every((square) =>
-    square.x > 0 && !state.gameState[square.y][square.x - 1]
+const moveLeft = (s: State): State => {
+  const canMoveLeft = s.currentSquare.every((square) =>
+    square.x > 0 && !s.gameState[square.y][square.x - 1]
   );
 
   if (canMoveLeft) {
-    const newCurrentSquare = state.currentSquare.map((square) => ({
+    const newCurrentSquare = s.currentSquare.map((square) => ({
       x: square.x - 1,
       y: square.y,
     }));
-    return { ...state, currentSquare: newCurrentSquare };
+    return { ...s, currentSquare: newCurrentSquare };
   }
 
-  return state;
+  return s;
 };
 
 // moveRight function
-const moveRight = (state: State): State => {
-  const canMoveRight = state.currentSquare.every((square) =>
-    square.x < Constants.GRID_WIDTH - 1 && !state.gameState[square.y][square.x + 1]
+const moveRight = (s: State): State => {
+  const canMoveRight = s.currentSquare.every((square) =>
+    square.x < Constants.GRID_WIDTH - 1 && !s.gameState[square.y][square.x + 1]
   );
 
   if (canMoveRight) {
-    const newCurrentSquare = state.currentSquare.map((square) => ({
+    const newCurrentSquare = s.currentSquare.map((square) => ({
       x: square.x + 1,
       y: square.y,
     }));
-    return { ...state, currentSquare: newCurrentSquare };
+    return { ...s, currentSquare: newCurrentSquare };
   }
 
-  return state;
+  return s;
 };
 
 // calculateDownDistance function
-function calculateDownDistance(state: State, distance = 0): number {
-  if (checkCollision(falling(state), state)) {
-    return distance + 1;
+const calculateDownDistance = (s: State, distance = 0): number => {
+  // Base case: if collision is detected, return the distance
+  if (checkCollision(falling(s.currentSquare), s.gameState)) {
+    return distance+1;
   }
-  return calculateDownDistance({ ...state, currentSquare: falling(state) }, distance + 1);
-}
+  // Recursive case: increment distance and continue checking
+  return calculateDownDistance({ ...s, currentSquare: falling(s.currentSquare) }, distance + 1);
+};
 
 // moveDown function
 const moveDown = (s: State): State => {
@@ -160,29 +157,25 @@ const moveDown = (s: State): State => {
   };
 };
 
-function clearAndMoveRows(state: State): State {
-  const filledRows = state.gameState.filter(row => row.every(cell => cell !== null));
-  const clearedRowsCount = Constants.GRID_HEIGHT - filledRows.length;
-
-  const newGameState = Array(clearedRowsCount)
-    .fill(null)
-    .map(() => Array(Constants.GRID_WIDTH).fill(null));
-
-  const remainingRows = state.gameState.filter(row => row.some(cell => cell !== null));
-
-  // Move the values above cleared rows down
-  const movedRows = remainingRows.map((row, rowIndex) => {
-    if (rowIndex >= clearedRowsCount) {
-      return row.map(cell => (cell !== true ? cell : null));
-    } else {
-      return row;
+function clearLines(s: State): [State, number] {
+  const updatedGameState = s.gameState.reduce((newState, row) => {
+    if (row.every((cell) => cell === true)) {
+      return [Array(Constants.GRID_WIDTH).fill(null), ...newState];
     }
-  });
+    return [...newState, row];
+  }, [] as (null | any)[][]);
 
-  return {
-    ...state,
-    gameState: newGameState.concat(movedRows),
+  const numberOfRowsToAdd = s.gameState.length - updatedGameState.length;
+  const newRows: (null | any)[][] = Array.from({ length: numberOfRowsToAdd }, () =>
+    Array(Constants.GRID_WIDTH).fill(null)
+  );
+
+  const updatedState: State = {
+    ...s,
+    gameState: [...newRows, ...updatedGameState].slice(0, Constants.GRID_HEIGHT), // Limit to the grid height
   };
+
+  return [updatedState, numberOfRowsToAdd];
 }
 
 /** State processing */
@@ -204,34 +197,36 @@ const initialState: State = {
  * @param s Current state
  * @returns Updated state
  */
-function tick(state: State): State {
+function tick(s: State): State {
   // Update game state based on the current square's position
-  const updatedGameState = updateGameState(state.currentSquare, state, null);
+  const clearedGameState = updateGameState(s.currentSquare, s.gameState, null);
 
   // Check for collision or if the square is at the bottom
-  const hasCollisionOrAtBottom = checkCollision(state.currentSquare, state);
+  const hasCollisionOrAtBottom = checkCollision(s.currentSquare, clearedGameState);
 
   if (hasCollisionOrAtBottom) {
     // Update game state and create a new square
-    const filledGameState = updateGameState(state.currentSquare, updatedGameState, true);
-    const [gameStateWithClearedRows, clearedRowCount] = clearAndMoveRows({ ...state, gameState: filledGameState });
+    const filledGameState = updateGameState(s.currentSquare, clearedGameState, true);
+    const [updatedState, clearedLines] = clearLines({ ...s, gameState: filledGameState });
+
     const newCurrentSquare = createSquareBlock();
     return {
-      ...state,
-      gameState: gameStateWithClearedRows,
+      ...updatedState,
       currentSquare: newCurrentSquare,
-      // Update the score based on clearedRowCount if needed
     };
   } else {
     // Move the current square down
-    const newCurrentSquare = falling(state.currentSquare);
+    const newCurrentSquare = falling(s.currentSquare);
+    const [updatedState, clearedLines] = clearLines({ ...s, currentSquare: newCurrentSquare });
+
     return {
-      ...state,
-      gameState: updatedGameState,
+      ...updatedState,
+      gameState: clearedGameState,
       currentSquare: newCurrentSquare,
     };
   }
 }
+
 /** Rendering (side effects) */
 
 /**
