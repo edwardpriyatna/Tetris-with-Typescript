@@ -99,7 +99,6 @@ function checkCollision(square: Square[], gameState: (null | any)[][]): boolean 
 }
 
 // moveLeft function
-// moveLeft function
 const moveLeft = (s: State): State => {
   const canMoveLeft = s.currentSquare.every(square =>
     square.x > 0 && !s.gameState[square.y][square.x - 1]
@@ -197,38 +196,76 @@ function tick(s: State): State {
   const clearedGameState = updateGameState(s.currentSquare, s.gameState, null);
 
   // Check for collision or if the square is at the bottom
-  const hasCollisionOrAtBottom = checkCollision(s.currentSquare, clearedGameState);
+  const hasCollisionOrAtBottom = checkCollision(falling(s.currentSquare), clearedGameState);
+
+  const newCurrentSquare = hasCollisionOrAtBottom
+    ? createSquareBlock()
+    : falling(s.currentSquare);
 
   const updatedState = hasCollisionOrAtBottom
-    ? (() => {
-        // Update game state and create a new square
-        const filledGameState = updateGameState(s.currentSquare, clearedGameState, true);
-        const [clearedState, clearedLines] = clearLines({ ...s, gameState: filledGameState });
-
-        const newScore = clearedState.score + clearedLines; // Increment the score based on cleared lines
-        return {
-          ...clearedState,
-          score: newScore, // Update the score
-          currentSquare: createSquareBlock(),
-        };
-      })()
-    : (() => {
-        // Move the current square down
-        const newCurrentSquare = falling(s.currentSquare);
-        const [clearedState, clearedLines] = clearLines({ ...s, currentSquare: newCurrentSquare });
-
-        const newScore = clearedState.score + clearedLines; // Increment the score based on cleared lines
-        return {
-          ...clearedState,
-          score: newScore, // Update the score
-          currentSquare: newCurrentSquare,
-        };
-      })();
+    ? {
+        ...s,
+        gameState: updateGameState(s.currentSquare, clearedGameState, true),
+        currentSquare: newCurrentSquare,
+      }
+    : {
+        ...s,
+        gameState: updateGameState(s.currentSquare, clearedGameState, true),
+        currentSquare: newCurrentSquare,
+      };
 
   return updatedState;
 }
 
 /** Rendering (side effects) */
+
+const renderSquares = (svg: SVGGraphicsElement, gameState: (null | any)[][]) => {
+  // Clear the SVG canvas
+  svg.innerHTML = '';
+
+  // Iterate through the game state and render squares as needed
+  gameState.forEach((row, rowIndex) => {
+    row.forEach((cell, columnIndex) => {
+      if (cell === true) {
+        const xCoordinate = columnIndex * Block.WIDTH;
+        const yCoordinate = rowIndex * Block.HEIGHT;
+
+        const squareElement = createSvgElement(svg.namespaceURI, "rect", {
+          height: `${Block.HEIGHT}`,
+          width: `${Block.WIDTH}`,
+          x: `${xCoordinate}`,
+          y: `${yCoordinate}`,
+          style: "fill: green", // Customize the color as needed
+        });
+
+        svg.appendChild(squareElement);
+      }
+    });
+  });
+};
+
+const renderCurrentSquare = (svg: SVGGraphicsElement, currentSquare: Square[]) => {
+  // Remove previous currentSquare elements from the SVG
+  const existingCurrentSquares = svg.querySelectorAll('.current-square');
+  existingCurrentSquares.forEach(square => square.remove());
+
+  // Render the currentSquare from the state
+  currentSquare.forEach(square => {
+    const xCoordinate = square.x * Block.WIDTH;
+    const yCoordinate = square.y * Block.HEIGHT;
+
+    const squareElement = createSvgElement(svg.namespaceURI, "rect", {
+      class: 'current-square',
+      height: `${Block.HEIGHT}`,
+      width: `${Block.WIDTH}`,
+      x: `${xCoordinate}`,
+      y: `${yCoordinate}`,
+      style: "fill: green", // Customize the color as needed
+    });
+
+    svg.appendChild(squareElement);
+  });
+};
 
 /**
  * Displays a SVG element on the canvas. Brings to foreground.
@@ -367,7 +404,7 @@ const render = (s: State) => {
   if (scoreTextElement) {
     scoreTextElement.textContent = `Score: ${s.score}`; // Update to display Score: 10
   }
-};
+  };
  
   /** Observables and subscription */
   const source$ = merge(
