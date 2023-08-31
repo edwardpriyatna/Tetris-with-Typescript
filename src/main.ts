@@ -346,15 +346,22 @@ const render = (s: State) => {
 
   // Iterate through the game state and render squares as needed
   const squareElements = renderSquares(svg, s);
-  squareElements.map(squareElement => svg.appendChild(squareElement));
+  squareElements.forEach(squareElement => svg.appendChild(squareElement));
 
   // Render the currentSquare from the state
   const currentSquareElements = renderCurrentSquare(svg, s);
-  currentSquareElements.map(squareElement => svg.appendChild(squareElement));
+  currentSquareElements.forEach(squareElement => svg.appendChild(squareElement));
 
   // Render the score
   const scoreElement = renderScore(svg, s.score);
   svg.appendChild(scoreElement);
+
+  // Show or hide the game over element
+  if (s.gameEnd) {
+    gameover.style.display = 'block';
+  } else {
+    gameover.style.display = 'none';
+  }
 };
 
 /** Observables and subscription */
