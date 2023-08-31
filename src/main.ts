@@ -372,10 +372,10 @@ const render = (s: State) => {
  
   /** Observables and subscription */
   const source$ = merge(
-    tick$.pipe(map(() => (state: State) => tick(state))),
-    left$.pipe(map(() => (state: State) => moveLeft(state))),
-    right$.pipe(map(() => (state: State) => moveRight(state))),
-    down$.pipe(map(() => (state: State) => moveDown(state)))
+    tick$.pipe(map(() => tick)),
+    left$.pipe(map(() => moveLeft)),
+    right$.pipe(map(() => moveRight)),
+    down$.pipe(map(() => moveDown))
   ).pipe(
     scan((s: State, action: (s: State) => State) => action(s), initialState)
   );
