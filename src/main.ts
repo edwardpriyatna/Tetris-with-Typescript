@@ -178,6 +178,16 @@ function clearLines(s: State): [State, number] {
   return [updatedState, numberOfRowsToAdd];
 }
 
+function checkGameEnd(state: State): State {
+  const hasValueInFirstRow = state.gameState[0].some(cell => cell !== null);
+
+  if (hasValueInFirstRow) {
+    return { ...state, gameEnd: true };
+  }
+
+  return state;
+}
+
 /** State processing */
 type State = Readonly<{
   gameEnd: boolean;
@@ -200,39 +210,28 @@ const initialState: State = {
  * @returns Updated state
  */
 function tick(s: State): State {
-  // Update game state based on the current square's position
-  const clearedGameState = updateGameState(s.currentSquare, s.gameState, null);
+  // Check if the game has ended
+  if (checkGameEnd(s)) {
+    return s; // No further updates if the game has ended
+  }
 
-  // Check for collision or if the square is at the bottom
+  const clearedGameState = updateGameState(s.currentSquare, s.gameState, null);
   const hasCollisionOrAtBottom = checkCollision(s.currentSquare, clearedGameState);
 
-  const updatedState = hasCollisionOrAtBottom
-    ? (() => {
-        // Update game state and create a new square
-        const filledGameState = updateGameState(s.currentSquare, clearedGameState, true);
-        const [clearedState, clearedLines] = clearLines({ ...s, gameState: filledGameState });
+  const newCurrentSquare = hasCollisionOrAtBottom ? createSquareBlock() : falling(s.currentSquare);
 
-        const newScore = clearedState.score + clearedLines; // Increment the score based on cleared lines
-        return {
-          ...clearedState,
-          score: newScore, // Update the score
-          currentSquare: createSquareBlock(),
-        };
-      })()
-    : (() => {
-        // Move the current square down
-        const newCurrentSquare = falling(s.currentSquare);
-        const [clearedState, clearedLines] = clearLines({ ...s, currentSquare: newCurrentSquare });
+  const filledGameState = hasCollisionOrAtBottom
+    ? updateGameState(s.currentSquare, clearedGameState, true)
+    : clearedGameState;
+  const [finalUpdatedState, clearedLines] = clearLines({ ...s, gameState: filledGameState });
 
-        const newScore = clearedState.score + clearedLines; // Increment the score based on cleared lines
-        return {
-          ...clearedState,
-          score: newScore, // Update the score
-          currentSquare: newCurrentSquare,
-        };
-      })();
+  const newScore = finalUpdatedState.score + clearedLines;
 
-  return updatedState;
+  return {
+    ...finalUpdatedState,
+    score: newScore,
+    currentSquare: newCurrentSquare,
+  };
 }
 
 /** Rendering (side effects) */
@@ -372,9 +371,9 @@ const render = (s: State) => {
 
   const scoreTextElement = document.querySelector("#scoreText") as HTMLElement;
   if (scoreTextElement) {
-    scoreTextElement.textContent = `Score: ${s.score}`; // Update to display Score: 10
+    scoreTextElement.textContent = `${s.score}`; // Update to display Score: 10
   }
-};
+  };
  
   /** Observables and subscription */
   const source$ = merge(
