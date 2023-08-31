@@ -230,6 +230,56 @@ function tick(s: State): State {
 }
 
 /** Rendering (side effects) */
+// Render functions
+const renderSquares = (svg: SVGGraphicsElement, s: State): SVGElement[] => {
+  // Generate SVG elements for squares in the game state
+  const squareElements: SVGElement[] = [];
+  s.gameState.forEach((row, rowIndex) => {
+    row.forEach((cell, columnIndex) => {
+      if (cell === true) {
+        const xCoordinate = columnIndex * Block.WIDTH;
+        const yCoordinate = rowIndex * Block.HEIGHT;
+        const squareElement = createSvgElement(svg.namespaceURI, "rect", {
+          height: `${Block.HEIGHT}`,
+          width: `${Block.WIDTH}`,
+          x: `${xCoordinate}`,
+          y: `${yCoordinate}`,
+          style: "fill: green",
+        });
+        squareElements.push(squareElement);
+      }
+    });
+  });
+  return squareElements;
+};
+
+const renderCurrentSquare = (svg: SVGGraphicsElement, s: State): SVGElement[] => {
+  // Generate SVG elements for the current falling square
+  const currentSquareElements: SVGElement[] = [];
+  s.currentSquare.forEach(square => {
+    const xCoordinate = square.x * Block.WIDTH;
+    const yCoordinate = square.y * Block.HEIGHT;
+    const squareElement = createSvgElement(svg.namespaceURI, "rect", {
+      height: `${Block.HEIGHT}`,
+      width: `${Block.WIDTH}`,
+      x: `${xCoordinate}`,
+      y: `${yCoordinate}`,
+      style: "fill: green",
+    });
+    currentSquareElements.push(squareElement);
+  });
+  return currentSquareElements;
+};
+
+const renderScore = (svg: SVGGraphicsElement, score: number): SVGElement => {
+  const scoreTextElement = createSvgElement(svg.namespaceURI, "text", {
+    x: `${Block.WIDTH * Constants.GRID_WIDTH + 10}`,
+    y: `${Block.HEIGHT * (Constants.GRID_HEIGHT - 1)}`,
+    fill: "white",
+  });
+  scoreTextElement.textContent = `Score: ${score}`;
+  return scoreTextElement;
+};
 
 /**
  * Displays a SVG element on the canvas. Brings to foreground.
@@ -314,61 +364,11 @@ export function main() {
  *
  * @param s Current state
  */
-const render = (s: State) => {
-  // Clear the SVG canvas
-  svg.innerHTML = '';
-
-  // Iterate through the game state and render squares as needed
-  s.gameState.forEach((row, rowIndex) => {
-    row.forEach((cell, columnIndex) => {
-      if (cell === true) {
-        const xCoordinate = columnIndex * Block.WIDTH;
-        const yCoordinate = rowIndex * Block.HEIGHT;
-
-        const squareElement = createSvgElement(svg.namespaceURI, "rect", {
-          height: `${Block.HEIGHT}`,
-          width: `${Block.WIDTH}`,
-          x: `${xCoordinate}`,
-          y: `${yCoordinate}`,
-          style: "fill: green", // Customize the color as needed
-        });
-
-        svg.appendChild(squareElement);
-      }
-    });
-  });
-
-  // Render the currentSquare from the state
-  s.currentSquare.forEach(square => {
-    const xCoordinate = square.x * Block.WIDTH;
-    const yCoordinate = square.y * Block.HEIGHT;
-
-    const squareElement = createSvgElement(svg.namespaceURI, "rect", {
-      height: `${Block.HEIGHT}`,
-      width: `${Block.WIDTH}`,
-      x: `${xCoordinate}`,
-      y: `${yCoordinate}`,
-      style: "fill: green", // Customize the color as needed
-    });
-
-    svg.appendChild(squareElement);
-  });
-
-  // Add a block to the preview canvas
-  const cubePreview = createSvgElement(preview.namespaceURI, "rect", {
-    height: `${Block.HEIGHT}`,
-    width: `${Block.WIDTH}`,
-    x: `${Block.WIDTH * 2}`,
-    y: `${Block.HEIGHT}`,
-    style: "fill: green",
-  });
-  preview.appendChild(cubePreview);
-
-  const scoreTextElement = document.querySelector("#scoreText") as HTMLElement;
-  if (scoreTextElement) {
-    scoreTextElement.textContent = `${s.score}`; // Update to display Score: 10
-  }
-  };
+  const render = (s: State): SVGElement[] => [
+    ...renderSquares(s),
+    ...renderCurrentSquare(s),
+    renderScore(s.score),
+  ];
  
   /** Observables and subscription */
   const source$ = merge(
