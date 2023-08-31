@@ -35,91 +35,91 @@ function createSquareBlock(): Square[] {
     y: 0, // Place the square block at the top edge
   };
 
-const squares: Square[] = [
-    { x: center.x - 1, y: center.y },
-    { x: center.x, y: center.y },
-    { x: center.x - 1, y: center.y + 1 },
-    { x: center.x, y: center.y + 1 },
-];
-return squares;
+  const squares: Square[] = [
+      { x: center.x - 1, y: center.y },
+      { x: center.x, y: center.y },
+      { x: center.x - 1, y: center.y + 1 },
+      { x: center.x, y: center.y + 1 },
+  ];
+  return squares;
 }
 
 const falling = (square: Square[]): Square[] => {
-return square.map(sq => ({
-x:sq.x,
-y:sq.y+1,
-}));
+  return square.map(sq => ({
+  x:sq.x,
+  y:sq.y+1,
+  }));
 };
 
 function updateGameState(squares :Square[],gameState:(null|any)[][],value:boolean|null):(null|any)[][]{
-return gameState.map((row,rowIndex)=>row.map((cell,columnIndex)=>{
-if(squares.some(sq=>sq.y===rowIndex && sq.x===columnIndex)){
-return value;
-}
-return cell;
-}));
+  return gameState.map((row,rowIndex)=>row.map((cell,columnIndex)=>{
+  if(squares.some(sq=>sq.y===rowIndex && sq.x===columnIndex)){
+  return value;
+  }
+  return cell;
+  }));
 }
 
 function checkCollision(square :Square[],gameState:(null|any)[][]):boolean{
-return square.some(sq=>{
-const{x,y}=sq;
+  return square.some(sq=>{
+  const{x,y}=sq;
 
-//Check if the square is at the bottom of the grid
-if(y>=Constants.GRID_HEIGHT-1){
-return true;
-}
+  //Check if the square is at the bottom of the grid
+  if(y>=Constants.GRID_HEIGHT-1){
+  return true;
+  }
 
-//Check if there's a block below the current square
-if(gameState[y+1][x]!==null){
-return true;
-}
+  //Check if there's a block below the current square
+  if(gameState[y+1][x]!==null){
+  return true;
+  }
 
-return false;
-});
+  return false;
+  });
 }
 
 //moveLeft function
 const moveLeft=(s :State):State=>{
-const canMoveLeft=s.currentSquare.every((square)=>
-square.x>0 && !s.gameState[square.y][square.x-1]
-);
+  const canMoveLeft=s.currentSquare.every((square)=>
+  square.x>0 && !s.gameState[square.y][square.x-1]
+  );
 
-if(canMoveLeft){
-const newCurrentSquare=s.currentSquare.map((square)=>({
-x:square.x-1,
-y:square.y,
-}));
-return {...s,currentSquare:newCurrentSquare};
-}
+  if(canMoveLeft){
+    const newCurrentSquare=s.currentSquare.map((square)=>({
+    x:square.x-1,
+    y:square.y,
+    }));
+    return {...s,currentSquare:newCurrentSquare};
+  }
 
-return s;
+  return s;
 };
 
 //moveRight function
 const moveRight=(s :State):State=>{
-const canMoveRight=s.currentSquare.every((square)=>
-square.x<Constants.GRID_WIDTH-1 && !s.gameState[square.y][square.x+1]
-);
+  const canMoveRight=s.currentSquare.every((square)=>
+  square.x<Constants.GRID_WIDTH-1 && !s.gameState[square.y][square.x+1]
+  );
 
-if(canMoveRight){
-const newCurrentSquare=s.currentSquare.map((square)=>({
-x:square.x+1,
-y:square.y,
-}));
-return {...s,currentSquare:newCurrentSquare};
-}
+  if(canMoveRight){
+    const newCurrentSquare=s.currentSquare.map((square)=>({
+    x:square.x+1,
+    y:square.y,
+    }));
+    return {...s,currentSquare:newCurrentSquare};
+  }
 
-return s;
+  return s;
 };
 
 //calculateDownDistance function
 const calculateDownDistance=(s :State,distance=0):number=>{
-//Base case :if collision is detected ,return the distance
-if(checkCollision(falling(s.currentSquare),s.gameState)){
-return distance+1;
-}
-//Recursive case :increment distance and continue checking
-return calculateDownDistance({...s,currentSquare :falling(s.currentSquare)},distance+1);
+  //Base case :if collision is detected ,return the distance
+  if(checkCollision(falling(s.currentSquare),s.gameState)){
+    return distance+1;
+  }
+  //Recursive case :increment distance and continue checking
+  return calculateDownDistance({...s,currentSquare :falling(s.currentSquare)},distance+1);
 };
 
 //moveDown function
@@ -127,60 +127,60 @@ const moveDown=(s :State):State=>{
 const downDistance=calculateDownDistance(s);
 
 const newCurrentSquare=s.currentSquare.map((square)=>({
-x:square.x,
-y:square.y+downDistance,
-}));
+  x:square.x,
+  y:square.y+downDistance,
+  }));
 
-return{
-...s,
-currentSquare:newCurrentSquare,
-};
+  return{
+  ...s,
+  currentSquare:newCurrentSquare,
+  };
 };
 
 function clearLines(s :State):[State,number]{
-const updatedGameState=s.gameState.reduce((newState,row)=>{
-if(row.every((cell)=>cell===true)){
-return [Array(Constants.GRID_WIDTH).fill(null),...newState];
-}
-return [...newState,row];
-},[] as (null|any)[][]);
+  const updatedGameState=s.gameState.reduce((newState,row)=>{
+  if(row.every((cell)=>cell===true)){
+    return [Array(Constants.GRID_WIDTH).fill(null),...newState];
+  }
+  return [...newState,row];
+  },[] as (null|any)[][]);
 
-const numberOfRowsToAdd=s.gameState.length-updatedGameState.length;
-const newRows:(null|any)[][]=Array.from({length:numberOfRowsToAdd},()=>
-Array(Constants.GRID_WIDTH).fill(null)
+  const numberOfRowsToAdd=s.gameState.length-updatedGameState.length;
+  const newRows:(null|any)[][]=Array.from({length:numberOfRowsToAdd},()=>
+  Array(Constants.GRID_WIDTH).fill(null)
 );
 
 const updatedState :State={
-...s,
-gameState:[...newRows,...updatedGameState].slice(0,Constants.GRID_HEIGHT),//Limit to the grid height
-};
+  ...s,
+  gameState:[...newRows,...updatedGameState].slice(0,Constants.GRID_HEIGHT),//Limit to the grid height
+  };
 
-return [updatedState,numberOfRowsToAdd];
+  return [updatedState,numberOfRowsToAdd];
 }
 
 function checkGameEnd(state :State):State{
-const hasValueInFirstRow=state.gameState[0].some(cell=>cell!==null);
+  const hasValueInFirstRow=state.gameState[0].some(cell=>cell!==null);
 
-if(hasValueInFirstRow){
-return {...state,gameEnd:true};
-}
+  if(hasValueInFirstRow){
+  return {...state,gameEnd:true};
+  }
 
-return state;
+  return state;
 }
 
 /** State processing */
 type State=Readonly<{
-gameEnd:boolean;
-gameState:(null|any)[][];
-currentSquare:Square[];
-score:number;//Add the "score" property
+  gameEnd:boolean;
+  gameState:(null|any)[][];
+  currentSquare:Square[];
+  score:number;//Add the "score" property
 }>;
 
 const initialState:State={
-gameEnd:false,
-gameState:Array.from({length:Constants.GRID_HEIGHT},()=>Array(Constants.GRID_WIDTH).fill(null)),
-currentSquare:createSquareBlock(),
-score:0,//Initialize the score property
+  gameEnd:false,
+  gameState:Array.from({length:Constants.GRID_HEIGHT},()=>Array(Constants.GRID_WIDTH).fill(null)),
+  currentSquare:createSquareBlock(),
+  score:0,//Initialize the score property
 } as const;
 
 /**
@@ -190,23 +190,23 @@ score:0,//Initialize the score property
 * @returns Updated state
 */
 function tick(s :State):State{
-const clearedGameState=updateGameState(s.currentSquare,s.gameState,null);
-const hasCollisionOrAtBottom=checkCollision(s.currentSquare,clearedGameState);
+  const clearedGameState=updateGameState(s.currentSquare,s.gameState,null);
+  const hasCollisionOrAtBottom=checkCollision(s.currentSquare,clearedGameState);
 
-const newCurrentSquare=hasCollisionOrAtBottom?createSquareBlock():falling(s.currentSquare);
+  const newCurrentSquare=hasCollisionOrAtBottom?createSquareBlock():falling(s.currentSquare);
 
-const filledGameState=hasCollisionOrAtBottom
-?updateGameState(s.currentSquare,clearedGameState,true)
-:clearedGameState;
-const [finalUpdatedState,clearedLines]=clearLines({...s,gameState:filledGameState});
+  const filledGameState=hasCollisionOrAtBottom
+  ?updateGameState(s.currentSquare,clearedGameState,true)
+  :clearedGameState;
+  const [finalUpdatedState,clearedLines]=clearLines({...s,gameState:filledGameState});
 
-const newScore=finalUpdatedState.score+clearedLines;
+  const newScore=finalUpdatedState.score+clearedLines;
 
-return{
-...finalUpdatedState,
-score:newScore,
-currentSquare:newCurrentSquare,
-};
+  return{
+  ...finalUpdatedState,
+  score:newScore,
+  currentSquare:newCurrentSquare,
+  };
 }
 
 /** Rendering (side effects) */
@@ -361,28 +361,28 @@ const render = (s: State) => {
 
 /** Observables and subscription */
 const source$ = merge(
-tick$.pipe(map(() => tick)),
-left$.pipe(map(() => moveLeft)),
-right$.pipe(map(() => moveRight)),
-down$.pipe(map(() => moveDown))
-).pipe(
-scan((s: State, action: (s: State) => State) => action(s), initialState)
+  tick$.pipe(map(() => tick)),
+  left$.pipe(map(() => moveLeft)),
+  right$.pipe(map(() => moveRight)),
+  down$.pipe(map(() => moveDown))
+  ).pipe(
+  scan((s: State, action: (s: State) => State) => action(s), initialState)
 );
 
 source$.subscribe((s: State) => {
 render(s);
 
 if (s.gameEnd) {
-show(gameover);
-} else {
-hide(gameover);
-}
-});
+  show(gameover);
+  } else {
+  hide(gameover);
+  }
+  });
 }
 
 // The following simply runs your main function on window load. Make sure to leave it in place.
 if (typeof window !== "undefined") {
-window.onload = () => {
-main();
-};
+  window.onload = () => {
+  main();
+  };
 }
