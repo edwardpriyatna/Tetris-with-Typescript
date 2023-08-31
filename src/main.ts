@@ -182,13 +182,15 @@ function clearLines(s: State): [State, number] {
 type State = Readonly<{
   gameEnd: boolean;
   gameState: (null | any)[][];
-  currentSquare: Square[]; // Add a property to store the current square
+  currentSquare: Square[];
+  score: number; // Add the "score" property
 }>;
 
 const initialState: State = {
   gameEnd: false,
   gameState: Array.from({ length: Constants.GRID_HEIGHT }, () => Array(Constants.GRID_WIDTH).fill(null)),
-  currentSquare: createSquareBlock(), // Initialize the current square
+  currentSquare: createSquareBlock(),
+  score: 0, // Initialize the score property
 } as const;
 
 /**
@@ -204,27 +206,33 @@ function tick(s: State): State {
   // Check for collision or if the square is at the bottom
   const hasCollisionOrAtBottom = checkCollision(s.currentSquare, clearedGameState);
 
-  if (hasCollisionOrAtBottom) {
-    // Update game state and create a new square
-    const filledGameState = updateGameState(s.currentSquare, clearedGameState, true);
-    const [updatedState, clearedLines] = clearLines({ ...s, gameState: filledGameState });
+  const updatedState = hasCollisionOrAtBottom
+    ? (() => {
+        // Update game state and create a new square
+        const filledGameState = updateGameState(s.currentSquare, clearedGameState, true);
+        const [clearedState, clearedLines] = clearLines({ ...s, gameState: filledGameState });
 
-    const newCurrentSquare = createSquareBlock();
-    return {
-      ...updatedState,
-      currentSquare: newCurrentSquare,
-    };
-  } else {
-    // Move the current square down
-    const newCurrentSquare = falling(s.currentSquare);
-    const [updatedState, clearedLines] = clearLines({ ...s, currentSquare: newCurrentSquare });
+        const newScore = clearedState.score + clearedLines; // Increment the score based on cleared lines
+        return {
+          ...clearedState,
+          score: newScore, // Update the score
+          currentSquare: createSquareBlock(),
+        };
+      })()
+    : (() => {
+        // Move the current square down
+        const newCurrentSquare = falling(s.currentSquare);
+        const [clearedState, clearedLines] = clearLines({ ...s, currentSquare: newCurrentSquare });
 
-    return {
-      ...updatedState,
-      gameState: clearedGameState,
-      currentSquare: newCurrentSquare,
-    };
-  }
+        const newScore = clearedState.score + clearedLines; // Increment the score based on cleared lines
+        return {
+          ...clearedState,
+          score: newScore, // Update the score
+          currentSquare: newCurrentSquare,
+        };
+      })();
+
+  return updatedState;
 }
 
 /** Rendering (side effects) */
@@ -361,6 +369,11 @@ const render = (s: State) => {
     style: "fill: green",
   });
   preview.appendChild(cubePreview);
+
+  const scoreTextElement = document.querySelector("#scoreText") as HTMLElement;
+  if (scoreTextElement) {
+    scoreTextElement.textContent = `Score: ${s.score}`; // Update to display Score: 10
+  }
 };
  
   /** Observables and subscription */
