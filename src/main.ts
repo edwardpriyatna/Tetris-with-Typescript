@@ -158,15 +158,9 @@ const updatedState :State={
   return [updatedState,numberOfRowsToAdd];
 }
 
-function checkGameEnd(state :State):State{
-  const hasValueInFirstRow=state.gameState[0].some(cell=>cell!==null);
-
-  if(hasValueInFirstRow){
-  return {...state,gameEnd:true};
-  }
-
-  return state;
-}
+const checkGameEnd = (state: State): boolean => {
+  return state.gameState[0].some(cell => cell !== null);
+};
 
 /** State processing */
 type State=Readonly<{
@@ -189,23 +183,27 @@ const initialState:State={
 * @param s Current state
 * @returns Updated state
 */
-function tick(s :State):State{
-  const clearedGameState=updateGameState(s.currentSquare,s.gameState,null);
-  const hasCollisionOrAtBottom=checkCollision(s.currentSquare,clearedGameState);
+function tick(s: State): State {
+  const clearedGameState = updateGameState(s.currentSquare, s.gameState, null);
+  const hasCollisionOrAtBottom = checkCollision(s.currentSquare, clearedGameState);
 
-  const newCurrentSquare=hasCollisionOrAtBottom?createSquareBlock():falling(s.currentSquare);
+  const newCurrentSquare = hasCollisionOrAtBottom ? createSquareBlock() : falling(s.currentSquare);
 
-  const filledGameState=hasCollisionOrAtBottom
-  ?updateGameState(s.currentSquare,clearedGameState,true)
-  :clearedGameState;
-  const [finalUpdatedState,clearedLines]=clearLines({...s,gameState:filledGameState});
+  const filledGameState = hasCollisionOrAtBottom
+    ? updateGameState(s.currentSquare, clearedGameState, true)
+    : clearedGameState;
+  const [finalUpdatedState, clearedLines] = clearLines({ ...s, gameState: filledGameState });
 
-  const newScore=finalUpdatedState.score+clearedLines;
+  const newScore = finalUpdatedState.score + clearedLines;
 
-  return{
-  ...finalUpdatedState,
-  score:newScore,
-  currentSquare:newCurrentSquare,
+  // Check if the game is over
+  const gameEnd = checkGameEnd(finalUpdatedState);
+
+  return {
+    ...finalUpdatedState,
+    score: newScore,
+    currentSquare: newCurrentSquare,
+    gameEnd,
   };
 }
 
