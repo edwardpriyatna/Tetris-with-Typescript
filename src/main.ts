@@ -251,18 +251,22 @@ function checkGameEnd(state: State): boolean {
 }
 
 /** State processing */
-type State=Readonly<{
-  gameEnd:boolean;
-  gameState:(null|any)[][];
-  currentSquare:Square[];
-  score:number;//Add the "score" property
+type State = Readonly<{
+  gameEnd: boolean;
+  gameState: (null | any)[][];
+  currentSquare: Square[];
+  score: number;
+  nextBlock: Square[]; // Add the "nextBlock" property
 }>;
 
-const initialState:State={
-  gameEnd:false,
-  gameState:Array.from({length:Constants.GRID_HEIGHT},()=>Array(Constants.GRID_WIDTH).fill(null)),
-  currentSquare:generateRandomBlock(),
-  score:0,//Initialize the score property
+const initialState: State = {
+  gameEnd: false,
+  gameState: Array.from({ length: Constants.GRID_HEIGHT }, () =>
+    Array(Constants.GRID_WIDTH).fill(null)
+  ),
+  currentSquare: generateRandomBlock(),
+  score: 0,
+  nextBlock: generateRandomBlock(), // Initialize the "nextBlock" property
 } as const;
 
 /**
@@ -281,7 +285,8 @@ function tick(s: State): State {
   const hasCollisionOrAtBottom = checkCollision(s.currentSquare, clearedGameState);
 
   // Only generate a new square if there is a collision or the square is at the bottom
-  const newCurrentSquare = hasCollisionOrAtBottom ? generateRandomBlock() : falling(s.currentSquare);
+  const newCurrentSquare = hasCollisionOrAtBottom ? s.nextBlock : falling(s.currentSquare);
+  const newNextBlock = hasCollisionOrAtBottom ? generateRandomBlock() : s.nextBlock;
 
   const filledGameState = hasCollisionOrAtBottom
     ? updateGameState(s.currentSquare, clearedGameState, true)
@@ -297,6 +302,7 @@ function tick(s: State): State {
     ...finalUpdatedState,
     score: newScore,
     currentSquare: newCurrentSquare,
+    nextBlock: newNextBlock,
     gameEnd,
   };
 }
