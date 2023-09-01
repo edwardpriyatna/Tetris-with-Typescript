@@ -250,12 +250,17 @@ const renderCurrentSquare = (svg: SVGGraphicsElement, s: State): SVGElement[] =>
 };
 
 const renderScore = (svg: SVGGraphicsElement, score: number): SVGElement => {
+  // Create an SVG text element
   const scoreTextElement = createSvgElement(svg.namespaceURI, "text", {
     x: `${Block.WIDTH * Constants.GRID_WIDTH + 10}`,
     y: `${Block.HEIGHT * (Constants.GRID_HEIGHT - 1)}`,
     fill: "white",
   });
+  
+  // Set the text content to display the current score
   scoreTextElement.textContent = `Score: ${score}`;
+  
+  // Return the text element
   return scoreTextElement;
 };
 
@@ -353,8 +358,10 @@ const render = (s: State) => {
   currentSquareElements.forEach(squareElement => svg.appendChild(squareElement));
 
   // Render the score
-  const scoreElement = renderScore(svg, s.score);
-  svg.appendChild(scoreElement);
+  const scoreText = document.querySelector("#scoreText") as HTMLElement; // Properly select the scoreText element
+  if (scoreText) {
+    scoreText.textContent = `${s.score}`; 
+  }
 
   // Show or hide the game over element
   if (s.gameEnd) {
@@ -370,18 +377,16 @@ const source$ = merge(
   left$.pipe(map(() => moveLeft)),
   right$.pipe(map(() => moveRight)),
   down$.pipe(map(() => moveDown))
-  ).pipe(
-  scan((s: State, action: (s: State) => State) => action(s), initialState)
-);
+)
+  .pipe(scan((s: State, action: (s: State) => State) => action(s), initialState))
+  .subscribe((s: State) => {
+    render(s);
 
-source$.subscribe((s: State) => {
-render(s);
-
-if (s.gameEnd) {
-  show(gameover);
-  } else {
-  hide(gameover);
-  }
+    if (s.gameEnd) {
+      show(gameover);
+    } else {
+      hide(gameover);
+    }
   });
 }
 
