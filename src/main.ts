@@ -250,6 +250,35 @@ function checkGameEnd(state: State): boolean {
   return state.gameState[0].some(cell => cell !== null);
 }
 
+function generateRandomSquare(s: State, clearedRowIndex: number): State {
+  // Find all empty coordinates above the cleared row
+  const emptyCoordinates: Coordinate[] = s.gameState
+    .slice(5, clearedRowIndex)
+    .flatMap((row, rowIndex) =>
+      row.map((cell, cellIndex) => (cell === null ? { x: cellIndex, y: rowIndex + 5 } : null))
+    )
+    .filter((coordinate): coordinate is Coordinate => coordinate !== null);
+
+  // If there are no empty coordinates, return the current state without updating it
+  if (emptyCoordinates.length === 0) {
+    return s;
+  }
+
+  // Choose a random empty coordinate
+  const randomIndex = Math.floor(Math.random() * emptyCoordinates.length);
+  const randomCoordinate = emptyCoordinates[randomIndex];
+
+  // Add a new square to the game state at the chosen coordinate
+  const updatedGameState = s.gameState.map((row, rowIndex) =>
+    row.map((cell, cellIndex) =>
+      rowIndex === randomCoordinate.y && cellIndex === randomCoordinate.x ? true : cell
+    )
+  );
+
+  // Return the updated state with the new square added to the game state
+  return { ...s, gameState: updatedGameState };
+}
+
 /** State processing */
 type State = Readonly<{
   gameEnd: boolean;
@@ -291,7 +320,12 @@ function tick(s: State): State {
   const filledGameState = hasCollisionOrAtBottom
     ? updateGameState(s.currentSquare, clearedGameState, true)
     : clearedGameState;
-  const [finalUpdatedState, clearedLines] = clearLines({ ...s, gameState: filledGameState });
+  
+  const [updatedState, clearedLines] = clearLines({ ...s, gameState: filledGameState });
+
+  // Generate a random square for each cleared line
+  const finalUpdatedState = Array.from({ length: clearedLines }, (_, i) => Constants.GRID_HEIGHT - clearedLines + i)
+    .reduce((state, rowIndex) => generateRandomSquare(state, rowIndex), updatedState);
 
   const newScore = finalUpdatedState.score + clearedLines;
 
