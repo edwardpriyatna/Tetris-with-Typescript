@@ -299,6 +299,7 @@ type State = Readonly<{
   currentSquare: Square[];
   score: number;
   nextBlock: Square[]; // Add the "nextBlock" property
+  level: number;
 }>;
 
 const initialState: State = {
@@ -309,6 +310,7 @@ const initialState: State = {
   currentSquare: generateRandomBlock(),
   score: 0,
   nextBlock: generateRandomBlock(), // Initialize the "nextBlock" property
+  level: 0
 } as const;
 
 /**
@@ -341,6 +343,7 @@ function tick(s: State): State {
     .reduce((state, rowIndex) => generateRandomSquare(state, rowIndex), updatedState);
 
   const newScore = finalUpdatedState.score + clearedLines;
+  const newLevel= finalUpdatedState.level + clearedLines;
 
   // Check if the game has ended after updating the state
   const gameEnd = checkGameEnd(finalUpdatedState);
@@ -351,6 +354,7 @@ function tick(s: State): State {
     currentSquare: newCurrentSquare,
     nextBlock: newNextBlock,
     gameEnd,
+    level: newLevel
   };
 }
 
@@ -539,6 +543,11 @@ export function main() {
     const scoreText = document.querySelector("#scoreText") as HTMLElement; // Properly select the scoreText element
     if (scoreText) {
       scoreText.textContent = `${s.score}`; 
+    }
+
+    const levelText = document.querySelector("#levelText") as HTMLElement; // Properly select the levelText element
+    if (levelText) {
+      levelText.textContent = `${s.level}`; 
     }
   
     // Show or hide the game over element
