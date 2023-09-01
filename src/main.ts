@@ -485,6 +485,9 @@ export function main() {
   const left$ = fromKey("KeyA");
   const right$ = fromKey("KeyD");
   const down$ = fromKey("KeyS");
+  const restart$ = fromEvent<KeyboardEvent>(document, "keypress").pipe(
+    filter(({ code }) => code === "KeyR")
+  );
 
   /** Observables */
   const tick$ = interval(Constants.TICK_RATE_MS);
@@ -531,12 +534,13 @@ export function main() {
     tick$.pipe(map(() => tick)),
     left$.pipe(map(() => moveLeft)),
     right$.pipe(map(() => moveRight)),
-    down$.pipe(map(() => moveDown))
+    down$.pipe(map(() => moveDown)),
+    restart$.pipe(map(() => () => initialState)) // Add this line
   )
     .pipe(scan((s: State, action: (s: State) => State) => action(s), initialState))
     .subscribe((s: State) => {
       render(s);
-
+  
       if (s.gameEnd) {
         show(gameover);
       } else {
