@@ -124,17 +124,17 @@ const calculateDownDistance=(s :State,distance=0):number=>{
 
 //moveDown function
 const moveDown=(s :State):State=>{
-const downDistance=calculateDownDistance(s);
+  const downDistance=calculateDownDistance(s);
 
-const newCurrentSquare=s.currentSquare.map((square)=>({
-  x:square.x,
-  y:square.y+downDistance,
-  }));
+  const newCurrentSquare=s.currentSquare.map((square)=>({
+    x:square.x,
+    y:square.y+downDistance,
+    }));
 
-  return{
-  ...s,
-  currentSquare:newCurrentSquare,
-  };
+    return{
+    ...s,
+    currentSquare:newCurrentSquare,
+    };
 };
 
 function clearLines(s: State): [State, number] {
@@ -157,9 +157,10 @@ function clearLines(s: State): [State, number] {
   return [updatedState, clearedLines];
 }
 
-const checkGameEnd = (state: State): boolean => {
+function checkGameEnd(state: State): boolean {
+  // Check if any cell in the top row of the game grid is filled
   return state.gameState[0].some(cell => cell !== null);
-};
+}
 
 /** State processing */
 type State=Readonly<{
@@ -361,12 +362,10 @@ const render = (s: State) => {
   if (scoreText) {
     scoreText.textContent = `${s.score}`; 
   }
-
-  // Show or hide the game over element
   if (s.gameEnd) {
-    gameover.style.display = 'block';
+    gameover.setAttribute("visibility", "visible");
   } else {
-    gameover.style.display = 'none';
+    gameover.setAttribute("visibility", "hidden");
   }
 };
 
