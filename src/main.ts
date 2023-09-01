@@ -201,14 +201,14 @@ const initialState:State={
 * @returns Updated state
 */
 function tick(s: State): State {
-  if (s.gameEnd) {
-    // If the game has ended, return the current state without updating it
-    return s;
-  }
   const clearedGameState = updateGameState(s.currentSquare, s.gameState, null);
   const hasCollisionOrAtBottom = checkCollision(s.currentSquare, clearedGameState);
 
-  const newCurrentSquare = hasCollisionOrAtBottom ? createSquareBlock() : falling(s.currentSquare);
+  // Check if the game has ended
+  const gameEnd = checkGameEnd(s);
+
+  // Only generate a new square if the game has not ended and there is a collision or the square is at the bottom
+  const newCurrentSquare = !gameEnd && hasCollisionOrAtBottom ? createSquareBlock() : falling(s.currentSquare);
 
   const filledGameState = hasCollisionOrAtBottom
     ? updateGameState(s.currentSquare, clearedGameState, true)
@@ -216,9 +216,6 @@ function tick(s: State): State {
   const [finalUpdatedState, clearedLines] = clearLines({ ...s, gameState: filledGameState });
 
   const newScore = finalUpdatedState.score + clearedLines;
-
-  // Check if the game is over
-  const gameEnd = checkGameEnd(finalUpdatedState);
 
   return {
     ...finalUpdatedState,
