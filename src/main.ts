@@ -137,25 +137,24 @@ const newCurrentSquare=s.currentSquare.map((square)=>({
   };
 };
 
-function clearLines(s :State):[State,number]{
-  const updatedGameState=s.gameState.reduce((newState,row)=>{
-  if(row.every((cell)=>cell===true)){
-    return [Array(Constants.GRID_WIDTH).fill(null),...newState];
-  }
-  return [...newState,row];
-  },[] as (null|any)[][]);
+function clearLines(s: State): [State, number] {
+  // Filter out any rows that are completely filled
+  const updatedGameState = s.gameState.filter(row => row.some(cell => cell === null));
 
-  const numberOfRowsToAdd=s.gameState.length-updatedGameState.length;
-  const newRows:(null|any)[][]=Array.from({length:numberOfRowsToAdd},()=>
-  Array(Constants.GRID_WIDTH).fill(null)
-);
+  // Calculate the number of rows that were cleared
+  const clearedLines = s.gameState.length - updatedGameState.length;
 
-const updatedState :State={
-  ...s,
-  gameState:[...newRows,...updatedGameState].slice(0,Constants.GRID_HEIGHT),//Limit to the grid height
+  // Create new empty rows to replace the cleared rows
+  const newRows = Array.from({ length: clearedLines }, () => Array(Constants.GRID_WIDTH).fill(null));
+
+  // Create an updated state with the new game grid
+  const updatedState: State = {
+    ...s,
+    gameState: [...newRows, ...updatedGameState],
   };
 
-  return [updatedState,numberOfRowsToAdd];
+  // Return the updated state and the number of cleared lines
+  return [updatedState, clearedLines];
 }
 
 const checkGameEnd = (state: State): boolean => {
