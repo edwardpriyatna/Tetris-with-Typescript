@@ -338,53 +338,56 @@ export function main() {
   /** Observables */
   const tick$ = interval(Constants.TICK_RATE_MS);
 
-/**
- * Renders the current state to the canvas.
- *
- * In MVC terms, this updates the View using the Model.
- *
- * @param s Current state
- */
-const render = (s: State) => {
-  // Clear the SVG canvas
-  svg.innerHTML = '';
+  /**
+   * Renders the current state to the canvas.
+   *
+   * In MVC terms, this updates the View using the Model.
+   *
+   * @param s Current state
+   */
+  const render = (s: State) => {
+    // Clear the SVG canvas
+    svg.innerHTML = '';
 
-  // Iterate through the game state and render squares as needed
-  const squareElements = renderSquares(svg, s);
-  squareElements.forEach(squareElement => svg.appendChild(squareElement));
+    // Iterate through the game state and render squares as needed
+    const squareElements = renderSquares(svg, s);
+    squareElements.forEach(squareElement => svg.appendChild(squareElement));
 
-  // Render the currentSquare from the state
-  const currentSquareElements = renderCurrentSquare(svg, s);
-  currentSquareElements.forEach(squareElement => svg.appendChild(squareElement));
+    // Render the currentSquare from the state
+    const currentSquareElements = renderCurrentSquare(svg, s);
+    currentSquareElements.forEach(squareElement => svg.appendChild(squareElement));
 
-  // Render the score
-  const scoreText = document.querySelector("#scoreText") as HTMLElement; // Properly select the scoreText element
-  if (scoreText) {
-    scoreText.textContent = `${s.score}`; 
-  }
-
-  if (s.gameEnd) {
-    svg.appendChild(gameover)
-  }
-};
-
-/** Observables and subscription */
-const source$ = merge(
-  tick$.pipe(map(() => tick)),
-  left$.pipe(map(() => moveLeft)),
-  right$.pipe(map(() => moveRight)),
-  down$.pipe(map(() => moveDown))
-)
-  .pipe(scan((s: State, action: (s: State) => State) => action(s), initialState))
-  .subscribe((s: State) => {
-    render(s);
-
-    if (s.gameEnd) {
-      show(gameover);
-    } else {
-      hide(gameover);
+    // Render the score
+    const scoreText = document.querySelector("#scoreText") as HTMLElement; // Properly select the scoreText element
+    if (scoreText) {
+      scoreText.textContent = `${s.score}`; 
     }
-  });
+
+    // Show or hide the game over element
+    if (s.gameEnd) {
+      svg.appendChild(gameover);
+    } else {
+      gameover.remove();
+    }
+  };
+
+  /** Observables and subscription */
+  const source$ = merge(
+    tick$.pipe(map(() => tick)),
+    left$.pipe(map(() => moveLeft)),
+    right$.pipe(map(() => moveRight)),
+    down$.pipe(map(() => moveDown))
+  )
+    .pipe(scan((s: State, action: (s: State) => State) => action(s), initialState))
+    .subscribe((s: State) => {
+      render(s);
+
+      if (s.gameEnd) {
+        show(gameover);
+      } else {
+        hide(gameover);
+      }
+    });
 }
 
 // The following simply runs your main function on window load. Make sure to leave it in place.
