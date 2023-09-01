@@ -362,10 +362,9 @@ const render = (s: State) => {
   if (scoreText) {
     scoreText.textContent = `${s.score}`; 
   }
+
   if (s.gameEnd) {
-    gameover.setAttribute("visibility", "visible");
-  } else {
-    gameover.setAttribute("visibility", "hidden");
+    svg.appendChild(gameover)
   }
 };
 
