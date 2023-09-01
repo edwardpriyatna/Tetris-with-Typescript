@@ -499,8 +499,14 @@ export function main() {
   const right$ = fromKey("KeyD");
   const down$ = fromKey("KeyS");
   const restart$ = fromEvent<KeyboardEvent>(document, "keypress").pipe(
-    filter(({ code }) => code === "KeyR")
-  );
+    filter(({ code }) => code === "KeyR"),
+    map(() => {
+      // Re-initialize the random function with a new seed value
+      random = lcg(Date.now());
+      // Return a function that returns the initial state
+      return () => initialState;
+    })
+);
 
   /** Observables */
   const tick$ = interval(Constants.TICK_RATE_MS);
