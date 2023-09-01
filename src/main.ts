@@ -1,6 +1,19 @@
 import "./style.css";
 import { fromEvent, interval, merge } from "rxjs";
 import { map, filter, scan } from "rxjs/operators";
+function lcg(seed: number) {
+  // LCG parameters for Numerical Recipes
+  const m = 2 ** 32;
+  const a = 1664525;
+  const c = 1013904223;
+
+  let z = seed;
+  return () => {
+    z = (a * z + c) % m;
+    return z / m;
+  };
+}
+let random = lcg(Date.now());
 
 /** Constants */
 const Viewport = {
@@ -100,7 +113,7 @@ function generateRandomBlock() {
 ];
 
   // Generate a random block type
-  const shapeIndex = Math.floor(Math.random() * shapes.length);
+  const shapeIndex = Math.floor(random() * shapes.length);
   const shape = shapes[shapeIndex];
 
   // Calculate the initial coordinates of the block based on its shape and size
