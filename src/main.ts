@@ -184,27 +184,33 @@ const initialState:State={
 * @returns Updated state
 */
 function tick(s: State): State {
-  const clearedGameState = updateGameState(s.currentSquare, s.gameState, null);
-  const hasCollisionOrAtBottom = checkCollision(s.currentSquare, clearedGameState);
+  // Check if the score is less than 4
+  if (s.score < 4) {
+    const clearedGameState = updateGameState(s.currentSquare, s.gameState, null);
+    const hasCollisionOrAtBottom = checkCollision(s.currentSquare, clearedGameState);
 
-  const newCurrentSquare = hasCollisionOrAtBottom ? createSquareBlock() : falling(s.currentSquare);
+    const newCurrentSquare = hasCollisionOrAtBottom ? createSquareBlock() : falling(s.currentSquare);
 
-  const filledGameState = hasCollisionOrAtBottom
-    ? updateGameState(s.currentSquare, clearedGameState, true)
-    : clearedGameState;
-  const [finalUpdatedState, clearedLines] = clearLines({ ...s, gameState: filledGameState });
+    const filledGameState = hasCollisionOrAtBottom
+      ? updateGameState(s.currentSquare, clearedGameState, true)
+      : clearedGameState;
+    const [finalUpdatedState, clearedLines] = clearLines({ ...s, gameState: filledGameState });
 
-  const newScore = finalUpdatedState.score + clearedLines;
+    const newScore = finalUpdatedState.score + clearedLines;
 
-  // Check if the game is over
-  const gameEnd = checkGameEnd(finalUpdatedState);
+    // Check if the game is over
+    const gameEnd = checkGameEnd(finalUpdatedState);
 
-  return {
-    ...finalUpdatedState,
-    score: newScore,
-    currentSquare: newCurrentSquare,
-    gameEnd,
-  };
+    return {
+      ...finalUpdatedState,
+      score: newScore,
+      currentSquare: newCurrentSquare,
+      gameEnd,
+    };
+  } else {
+    // If the score is 4 or greater, stop generating new squares
+    return s;
+  }
 }
 
 /** Rendering (side effects) */
