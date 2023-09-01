@@ -51,13 +51,12 @@ const falling = (square: Square[]): Square[] => {
   }));
 };
 
-function updateGameState(squares :Square[],gameState:(null|any)[][],value:boolean|null):(null|any)[][]{
-  return gameState.map((row,rowIndex)=>row.map((cell,columnIndex)=>{
-  if(squares.some(sq=>sq.y===rowIndex && sq.x===columnIndex)){
-  return value;
-  }
-  return cell;
-  }));
+function updateGameState(squares: Square[], gameState: (null | any)[][], value: boolean | null): (null | any)[][] {
+  return gameState.map((row, rowIndex) =>
+    row.map((cell, columnIndex) =>
+      squares.some(sq => sq.y === rowIndex && sq.x === columnIndex) ? value : cell
+    )
+  );
 }
 
 function checkCollision(square :Square[],gameState:(null|any)[][]):boolean{
@@ -79,34 +78,46 @@ function checkCollision(square :Square[],gameState:(null|any)[][]):boolean{
 }
 
 //moveLeft function
-const moveLeft=(s :State):State=>{
-  const canMoveLeft=s.currentSquare.every((square)=>
-  square.x>0 && !s.gameState[square.y][square.x-1]
+const moveLeft = (s: State): State => {
+  // Check if the game has ended
+  if (s.gameEnd) {
+    // If the game has ended, return the current state without updating it
+    return s;
+  }
+
+  const canMoveLeft = s.currentSquare.every(
+    square => square.x > 0 && !s.gameState[square.y][square.x - 1]
   );
 
-  if(canMoveLeft){
-    const newCurrentSquare=s.currentSquare.map((square)=>({
-    x:square.x-1,
-    y:square.y,
+  if (canMoveLeft) {
+    const newCurrentSquare = s.currentSquare.map(square => ({
+      x: square.x - 1,
+      y: square.y,
     }));
-    return {...s,currentSquare:newCurrentSquare};
+    return { ...s, currentSquare: newCurrentSquare };
   }
 
   return s;
 };
 
 //moveRight function
-const moveRight=(s :State):State=>{
-  const canMoveRight=s.currentSquare.every((square)=>
-  square.x<Constants.GRID_WIDTH-1 && !s.gameState[square.y][square.x+1]
+const moveRight = (s: State): State => {
+  // Check if the game has ended
+  if (s.gameEnd) {
+    // If the game has ended, return the current state without updating it
+    return s;
+  }
+
+  const canMoveRight = s.currentSquare.every(
+    square => square.x < Constants.GRID_WIDTH - 1 && !s.gameState[square.y][square.x + 1]
   );
 
-  if(canMoveRight){
-    const newCurrentSquare=s.currentSquare.map((square)=>({
-    x:square.x+1,
-    y:square.y,
+  if (canMoveRight) {
+    const newCurrentSquare = s.currentSquare.map(square => ({
+      x: square.x + 1,
+      y: square.y,
     }));
-    return {...s,currentSquare:newCurrentSquare};
+    return { ...s, currentSquare: newCurrentSquare };
   }
 
   return s;
@@ -123,18 +134,24 @@ const calculateDownDistance=(s :State,distance=0):number=>{
 };
 
 //moveDown function
-const moveDown=(s :State):State=>{
-  const downDistance=calculateDownDistance(s);
+const moveDown = (s: State): State => {
+  // Check if the game has ended
+  if (s.gameEnd) {
+    // If the game has ended, return the current state without updating it
+    return s;
+  }
 
-  const newCurrentSquare=s.currentSquare.map((square)=>({
-    x:square.x,
-    y:square.y+downDistance,
-    }));
+  const downDistance = calculateDownDistance(s);
 
-    return{
+  const newCurrentSquare = s.currentSquare.map(square => ({
+    x: square.x,
+    y: square.y + downDistance,
+  }));
+
+  return {
     ...s,
-    currentSquare:newCurrentSquare,
-    };
+    currentSquare: newCurrentSquare,
+  };
 };
 
 function clearLines(s: State): [State, number] {
@@ -184,6 +201,10 @@ const initialState:State={
 * @returns Updated state
 */
 function tick(s: State): State {
+  if (s.gameEnd) {
+    // If the game has ended, return the current state without updating it
+    return s;
+  }
   const clearedGameState = updateGameState(s.currentSquare, s.gameState, null);
   const hasCollisionOrAtBottom = checkCollision(s.currentSquare, clearedGameState);
 
@@ -348,21 +369,21 @@ export function main() {
   const render = (s: State) => {
     // Clear the SVG canvas
     svg.innerHTML = '';
-
+  
     // Iterate through the game state and render squares as needed
     const squareElements = renderSquares(svg, s);
-    squareElements.forEach(squareElement => svg.appendChild(squareElement));
-
+    squareElements.map(squareElement => svg.appendChild(squareElement));
+  
     // Render the currentSquare from the state
     const currentSquareElements = renderCurrentSquare(svg, s);
-    currentSquareElements.forEach(squareElement => svg.appendChild(squareElement));
-
+    currentSquareElements.map(squareElement => svg.appendChild(squareElement));
+  
     // Render the score
     const scoreText = document.querySelector("#scoreText") as HTMLElement; // Properly select the scoreText element
     if (scoreText) {
       scoreText.textContent = `${s.score}`; 
     }
-
+  
     // Show or hide the game over element
     if (s.gameEnd) {
       svg.appendChild(gameover);
