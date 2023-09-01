@@ -330,7 +330,7 @@ function tick(s: State): State {
 
   // Only generate a new square if there is a collision or the square is at the bottom
   const newCurrentSquare = hasCollisionOrAtBottom ? s.nextBlock : falling(s.currentSquare);
-  const newNextBlock = hasCollisionOrAtBottom ? generateRandomBlock() : s.nextBlock;
+  const newNextBlock = hasCollisionOrAtBottom ? createSquareBlock() : s.nextBlock;
 
   const filledGameState = hasCollisionOrAtBottom
     ? updateGameState(s.currentSquare, clearedGameState, true)
