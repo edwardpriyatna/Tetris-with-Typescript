@@ -364,6 +364,23 @@ const renderScore = (svg: SVGGraphicsElement, score: number): SVGElement => {
   return scoreTextElement;
 };
 
+const renderNextBlock = (svg: SVGGraphicsElement, s: State): SVGElement[] => {
+  // Generate SVG elements for the next block
+  const nextBlockElements = s.nextBlock.map(square => {
+    const xCoordinate = square.x * Block.WIDTH;
+    const yCoordinate = square.y * Block.HEIGHT;
+    const squareElement = createSvgElement(svg.namespaceURI, "rect", {
+      height: `${Block.HEIGHT}`,
+      width: `${Block.WIDTH}`,
+      x: `${xCoordinate}`,
+      y: `${yCoordinate}`,
+      style: "fill: green",
+    });
+    return squareElement;
+  });
+  return nextBlockElements;
+};
+
 /**
  * Displays a SVG element on the canvas. Brings to foreground.
  * @param elem SVG element to display
@@ -448,6 +465,7 @@ export function main() {
   const render = (s: State) => {
     // Clear the SVG canvas
     svg.innerHTML = '';
+    preview.innerHTML = ''; // Clear the SVG preview
   
     // Iterate through the game state and render squares as needed
     const squareElements = renderSquares(svg, s);
@@ -456,6 +474,10 @@ export function main() {
     // Render the currentSquare from the state
     const currentSquareElements = renderCurrentSquare(svg, s);
     currentSquareElements.map(squareElement => svg.appendChild(squareElement));
+  
+    // Render the next block in the preview
+    const nextBlockElements = renderNextBlock(preview, s);
+    nextBlockElements.map(squareElement => preview.appendChild(squareElement));
   
     // Render the score
     const scoreText = document.querySelector("#scoreText") as HTMLElement; // Properly select the scoreText element
@@ -470,7 +492,6 @@ export function main() {
       gameover.remove();
     }
   };
-
   /** Observables and subscription */
   const source$ = merge(
     tick$.pipe(map(() => tick)),
