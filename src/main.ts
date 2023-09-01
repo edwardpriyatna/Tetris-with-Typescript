@@ -44,6 +44,77 @@ function createSquareBlock(): Square[] {
   return squares;
 }
 
+function generateRandomBlock() {
+  // Define the shapes of the different Tetris blocks
+  const shapes = [
+    // I-block
+    [
+      { x: -1, y: 0 },
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 2, y: 0 },
+    ],
+    // J-block
+    [
+      { x: -1, y: -1 },
+      { x: -1, y: 0 },
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+    ],
+    // L-block
+    [
+      { x: -1, y: 0 },
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 1, y: -1 },
+    ],
+    // O-block
+    [
+      { x: -1, y: -1 },
+      { x: -1, y: 0 },
+      { x: 0, y: -1 },
+      { x: 0, y: 0 },
+    ],
+    // S-block
+    [
+      { x: -1, y: 0 },
+      { x: 0, y: 0 },
+      { x: 0, y: -1 },
+      { x: 1, y:-1},
+    ],
+    // T-block
+    [
+      { x:-1,y :0},
+      {x :0,y :-1},
+      {x :0,y :0},
+      {x :1,y :0}
+    ],
+    // Z-block
+    [
+     {x :-1,y :-1},
+     {x :0,y :-1},
+     {x :0,y :0},
+     {x :1,y :0}
+    ]
+    
+];
+
+  // Generate a random block type
+  const shapeIndex = Math.floor(Math.random() * shapes.length);
+  const shape = shapes[shapeIndex];
+
+  // Calculate the initial coordinates of the block based on its shape and size
+  const initialX = Math.floor(Constants.GRID_WIDTH /2);
+  const initialY = Math.min(...shape.map(square => square.y));
+  const block = shape.map(square => ({
+  x :square.x +initialX,
+  y :square.y-initialY,
+  }));
+
+  // Return the coordinates of the new block
+  return block;
+}
+
 const falling = (square: Square[]): Square[] => {
   return square.map(sq => ({
   x:sq.x,
@@ -190,7 +261,7 @@ type State=Readonly<{
 const initialState:State={
   gameEnd:false,
   gameState:Array.from({length:Constants.GRID_HEIGHT},()=>Array(Constants.GRID_WIDTH).fill(null)),
-  currentSquare:createSquareBlock(),
+  currentSquare:generateRandomBlock(),
   score:0,//Initialize the score property
 } as const;
 
@@ -201,14 +272,16 @@ const initialState:State={
 * @returns Updated state
 */
 function tick(s: State): State {
+  // If the game has ended, return the current state without updating it
+  if (s.gameEnd) {
+    return s;
+  }
+
   const clearedGameState = updateGameState(s.currentSquare, s.gameState, null);
   const hasCollisionOrAtBottom = checkCollision(s.currentSquare, clearedGameState);
 
-  // Check if the game has ended
-  const gameEnd = checkGameEnd(s);
-
-  // Only generate a new square if the game has not ended and there is a collision or the square is at the bottom
-  const newCurrentSquare = !gameEnd && hasCollisionOrAtBottom ? createSquareBlock() : falling(s.currentSquare);
+  // Only generate a new square if there is a collision or the square is at the bottom
+  const newCurrentSquare = hasCollisionOrAtBottom ? generateRandomBlock() : falling(s.currentSquare);
 
   const filledGameState = hasCollisionOrAtBottom
     ? updateGameState(s.currentSquare, clearedGameState, true)
@@ -216,6 +289,9 @@ function tick(s: State): State {
   const [finalUpdatedState, clearedLines] = clearLines({ ...s, gameState: filledGameState });
 
   const newScore = finalUpdatedState.score + clearedLines;
+
+  // Check if the game has ended after updating the state
+  const gameEnd = checkGameEnd(finalUpdatedState);
 
   return {
     ...finalUpdatedState,
