@@ -115,7 +115,6 @@ function generateRandomBlock() {
    return block;
 }
 
-
 const falling = (square: Square[]): Square[] => {
   return square.map(sq => ({
   x:sq.x,
@@ -156,18 +155,18 @@ const move = (s: State, direction: "left" | "right"): State => {
     return s;
   }
 
-  const canMove = s.currentSquare.every(
+  const canMove = s.currentBlock.every(
     square =>
       (direction === "left" && square.x > 0 && !s.gameState[square.y][square.x - 1]) ||
       (direction === "right" && square.x < Constants.GRID_WIDTH - 1 && !s.gameState[square.y][square.x + 1])
   );
 
   if (canMove) {
-    const newCurrentSquare = s.currentSquare.map(square => ({
+    const newcurrentBlock = s.currentBlock.map(square => ({
       x: square.x + (direction === "left" ? -1 : 1),
       y: square.y,
     }));
-    return { ...s, currentSquare: newCurrentSquare };
+    return { ...s, currentBlock: newcurrentBlock };
   }
 
   return s;
@@ -176,11 +175,11 @@ const move = (s: State, direction: "left" | "right"): State => {
 //calculateDownDistance function
 const calculateDownDistance=(s :State,distance=0):number=>{
   //Base case :if collision is detected ,return the distance
-  if(checkCollision(falling(s.currentSquare),s.gameState)){
+  if(checkCollision(falling(s.currentBlock),s.gameState)){
     return distance+1;
   }
   //Recursive case :increment distance and continue checking
-  return calculateDownDistance({...s,currentSquare :falling(s.currentSquare)},distance+1);
+  return calculateDownDistance({...s,currentBlock :falling(s.currentBlock)},distance+1);
 };
 
 //moveDown function
@@ -193,14 +192,14 @@ const moveDown = (s: State): State => {
 
   const downDistance = calculateDownDistance(s);
 
-  const newCurrentSquare = s.currentSquare.map(square => ({
+  const newcurrentBlock = s.currentBlock.map(square => ({
     x: square.x,
     y: square.y + downDistance,
   }));
 
   return {
     ...s,
-    currentSquare: newCurrentSquare,
+    currentBlock: newcurrentBlock,
   };
 };
 
@@ -264,10 +263,10 @@ const rotate = (s: State, direction: "left" | "right"): State => {
   }
 
   // Check if the current block is a square block
-  const isSquareBlock = s.currentSquare.every(
+  const isSquareBlock = s.currentBlock.every(
     square =>
-      Math.abs(square.x - s.currentSquare[0].x) <= 1 &&
-      Math.abs(square.y - s.currentSquare[0].y) <= 1
+      Math.abs(square.x - s.currentBlock[0].x) <= 1 &&
+      Math.abs(square.y - s.currentBlock[0].y) <= 1
   );
 
   // If the current block is a square block, do not perform the rotation
@@ -276,11 +275,11 @@ const rotate = (s: State, direction: "left" | "right"): State => {
   }
 
   const center = {
-    x: s.currentSquare[0].x,
-    y: s.currentSquare[0].y,
+    x: s.currentBlock[0].x,
+    y: s.currentBlock[0].y,
   };
 
-  const newCurrentSquare = s.currentSquare.map(square => {
+  const newcurrentBlock = s.currentBlock.map(square => {
     const x =
       direction === "left"
         ? center.x - center.y + square.y
@@ -292,7 +291,7 @@ const rotate = (s: State, direction: "left" | "right"): State => {
     return { x, y };
   });
 
-  const isValid = newCurrentSquare.every(
+  const isValid = newcurrentBlock.every(
     square =>
       square.x >= 0 &&
       square.x < Constants.GRID_WIDTH &&
@@ -303,7 +302,7 @@ const rotate = (s: State, direction: "left" | "right"): State => {
 
   if (isValid) {
     // Return a new state with the rotated block
-    return { ...s, currentSquare: newCurrentSquare };
+    return { ...s, currentBlock: newcurrentBlock };
   }
 
   // Return the current state if the rotation is not valid
@@ -318,7 +317,7 @@ const restartGame = (state: State): State => {
     gameState: Array.from({ length: Constants.GRID_HEIGHT }, () =>
       Array(Constants.GRID_WIDTH).fill(null)
     ),
-    currentSquare: generateRandomBlock(),
+    currentBlock: generateRandomBlock(),
     score: 0,
     nextBlock: generateRandomBlock(),
     level: 0,
@@ -330,7 +329,7 @@ const restartGame = (state: State): State => {
 type State = Readonly<{
   gameEnd: boolean;
   gameState: (null | any)[][];
-  currentSquare: Square[];
+  currentBlock: Square[];
   score: number;
   nextBlock: Square[];
   level: number;
@@ -342,7 +341,7 @@ const initialState: State = {
   gameState: Array.from({ length: Constants.GRID_HEIGHT }, () =>
     Array(Constants.GRID_WIDTH).fill(null)
   ),
-  currentSquare: generateRandomBlock(),
+  currentBlock: generateRandomBlock(),
   score: 0,
   nextBlock: generateRandomBlock(),
   level: 0,
@@ -362,15 +361,15 @@ function tick(s: State): State {
     return s;
   }
 
-  const clearedGameState = updateGameState(s.currentSquare, s.gameState, null);
-  const hasCollisionOrAtBottom = checkCollision(s.currentSquare, clearedGameState);
+  const clearedGameState = updateGameState(s.currentBlock, s.gameState, null);
+  const hasCollisionOrAtBottom = checkCollision(s.currentBlock, clearedGameState);
 
   // Only generate a new square if there is a collision or the square is at the bottom
-  const newCurrentSquare = hasCollisionOrAtBottom ? s.nextBlock : falling(s.currentSquare);
+  const newcurrentBlock = hasCollisionOrAtBottom ? s.nextBlock : falling(s.currentBlock);
   const newNextBlock = hasCollisionOrAtBottom ? generateRandomBlock() : s.nextBlock;
 
   const filledGameState = hasCollisionOrAtBottom
-    ? updateGameState(s.currentSquare, clearedGameState, true)
+    ? updateGameState(s.currentBlock, clearedGameState, true)
     : clearedGameState;
   
   const [updatedState, clearedLines] = clearLines({ ...s, gameState: filledGameState });
@@ -393,7 +392,7 @@ function tick(s: State): State {
    return {
      ...finalUpdatedState,
      score: newScore,
-     currentSquare: newCurrentSquare,
+     currentBlock: newcurrentBlock,
      nextBlock: newNextBlock,
      gameEnd,
      highScore: newHighScore,
@@ -426,9 +425,9 @@ const renderSquares = (svg: SVGGraphicsElement, s: State): SVGElement[] => {
   return squareElements;
 };
 
-const renderCurrentSquare = (svg: SVGGraphicsElement, s: State): SVGElement[] => {
+const rendercurrentBlock = (svg: SVGGraphicsElement, s: State): SVGElement[] => {
   // Generate SVG elements for the current falling square
-  const currentSquareElements = s.currentSquare.map(square => {
+  const currentBlockElements = s.currentBlock.map(square => {
     const xCoordinate = square.x * Block.WIDTH;
     const yCoordinate = square.y * Block.HEIGHT;
     const squareElement = createSvgElement(svg.namespaceURI, "rect", {
@@ -440,7 +439,7 @@ const renderCurrentSquare = (svg: SVGGraphicsElement, s: State): SVGElement[] =>
     });
     return squareElement;
   });
-  return currentSquareElements;
+  return currentBlockElements;
 };
 
 const renderNextBlock = (svg: SVGGraphicsElement, s: State): SVGElement[] => {
@@ -579,9 +578,9 @@ export function main() {
     const squareElements = renderSquares(svg, s);
     squareElements.map(squareElement => svg.appendChild(squareElement));
   
-    // Render the currentSquare from the state
-    const currentSquareElements = renderCurrentSquare(svg, s);
-    currentSquareElements.map(squareElement => svg.appendChild(squareElement));
+    // Render the currentBlock from the state
+    const currentBlockElements = rendercurrentBlock(svg, s);
+    currentBlockElements.map(squareElement => svg.appendChild(squareElement));
   
     // Render the next block in the preview
     const nextBlockElements = renderNextBlock(preview, s);
