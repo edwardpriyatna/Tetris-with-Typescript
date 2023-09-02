@@ -161,44 +161,22 @@ function checkCollision(square :Square[],gameState:(null|any)[][]):boolean{
   });
 }
 
-//moveLeft function
-const moveLeft = (s: State): State => {
+const move = (s: State, direction: "left" | "right"): State => {
   // Check if the game has ended
   if (s.gameEnd) {
     // If the game has ended, return the current state without updating it
     return s;
   }
 
-  const canMoveLeft = s.currentSquare.every(
-    square => square.x > 0 && !s.gameState[square.y][square.x - 1]
+  const canMove = s.currentSquare.every(
+    square =>
+      (direction === "left" && square.x > 0 && !s.gameState[square.y][square.x - 1]) ||
+      (direction === "right" && square.x < Constants.GRID_WIDTH - 1 && !s.gameState[square.y][square.x + 1])
   );
 
-  if (canMoveLeft) {
+  if (canMove) {
     const newCurrentSquare = s.currentSquare.map(square => ({
-      x: square.x - 1,
-      y: square.y,
-    }));
-    return { ...s, currentSquare: newCurrentSquare };
-  }
-
-  return s;
-};
-
-//moveRight function
-const moveRight = (s: State): State => {
-  // Check if the game has ended
-  if (s.gameEnd) {
-    // If the game has ended, return the current state without updating it
-    return s;
-  }
-
-  const canMoveRight = s.currentSquare.every(
-    square => square.x < Constants.GRID_WIDTH - 1 && !s.gameState[square.y][square.x + 1]
-  );
-
-  if (canMoveRight) {
-    const newCurrentSquare = s.currentSquare.map(square => ({
-      x: square.x + 1,
+      x: square.x + (direction === "left" ? -1 : 1),
       y: square.y,
     }));
     return { ...s, currentSquare: newCurrentSquare };
@@ -292,7 +270,7 @@ function generateRandomSquare(s: State, clearedRowIndex: number): State {
   return { ...s, gameState: updatedGameState };
 }
 
-const rotateLeft = (s: State): State => {
+const rotate = (s: State, direction: "left" | "right"): State => {
   if (s.gameEnd) {
     return s;
   }
@@ -303,42 +281,14 @@ const rotateLeft = (s: State): State => {
   };
 
   const newCurrentSquare = s.currentSquare.map(square => {
-    const x = center.x - center.y + square.y;
-    const y = center.y + center.x - square.x;
-    return { x, y };
-  });
-
-  const isValid = newCurrentSquare.every(
-    square =>
-      square.x >= 0 &&
-      square.x < Constants.GRID_WIDTH &&
-      square.y >= 0 &&
-      square.y < Constants.GRID_HEIGHT &&
-      !s.gameState[square.y][square.x]
-  );
-
-  if (isValid) {
-    // Return a new state with the rotated block
-    return { ...s, currentSquare: newCurrentSquare };
-  }
-
-  // Return the current state if the rotation is not valid
-  return s;
-};
-
-const rotateRight = (s: State): State => {
-  if (s.gameEnd) {
-    return s;
-  }
-
-  const center = {
-    x: s.currentSquare[0].x,
-    y: s.currentSquare[0].y,
-  };
-
-  const newCurrentSquare = s.currentSquare.map(square => {
-    const x = center.x + center.y - square.y;
-    const y = center.y - center.x + square.x;
+    const x =
+      direction === "left"
+        ? center.x - center.y + square.y
+        : center.x + center.y - square.y;
+    const y =
+      direction === "left"
+        ? center.y + center.x - square.x
+        : center.y - center.x + square.x;
     return { x, y };
   });
 
@@ -567,11 +517,11 @@ export function main() {
   const key$ = fromEvent<KeyboardEvent>(document, "keypress");
   const fromKey = (keyCode: Key) =>
     key$.pipe(filter(({ code }) => code === keyCode));
-  const left$ = fromKey("KeyA");
-  const right$ = fromKey("KeyD");
+  const left$ = fromKey("KeyA").pipe(map(() => (s: State) => move(s, "left")));
+  const right$ = fromKey("KeyD").pipe(map(() => (s: State) => move(s, "right")));
   const down$ = fromKey("KeyS");
-  const rotateLeft$ = fromKey("KeyQ");
-  const rotateRight$ = fromKey("KeyE");
+  const rotateLeft$ = fromKey("KeyQ").pipe(map(() => (s: State) => rotate(s, "left")));
+  const rotateRight$ = fromKey("KeyE").pipe(map(() => (s: State) => rotate(s, "right")));
   const restart$ = fromEvent<KeyboardEvent>(document, "keypress").pipe(
     filter(({ code }) => code === "KeyR"),
     map(() => {
@@ -630,19 +580,19 @@ export function main() {
     }
   };
   /** Observables and subscription */
+  
   const source$ = merge(
     tick$.pipe(map(() => tick)),
-    left$.pipe(map(() => moveLeft)),
-    right$.pipe(map(() => moveRight)),
+    left$,
+    right$,
     down$.pipe(map(() => moveDown)),
-    rotateLeft$.pipe(map(() => rotateLeft)),
-    rotateRight$.pipe(map(() => rotateRight)),
-    restart$.pipe(map(() => () => initialState)) // Add this line
+    rotateLeft$,
+    rotateRight$,
+    restart$.pipe(map(() => () => initialState))
   )
-    .pipe(scan((s: State, action: (s: State) => State) => action(s), initialState))
+  .pipe(scan((s: State, action: (s: State) => State) => action(s), initialState))
     .subscribe((s: State) => {
       render(s);
-  
       if (s.gameEnd) {
         show(gameover);
       } else {
