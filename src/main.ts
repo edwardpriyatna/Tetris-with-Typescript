@@ -44,7 +44,7 @@ function createSquareBlock(): Square[] {
   return squares;
 }
 
-function generateRandomBlock() {
+function generateRandomBlock() { //made using generative AI
   // Define the shapes of the different Tetris blocks
   const shapes = [
     // I-block
@@ -105,8 +105,8 @@ function generateRandomBlock() {
 
    // Calculate the initial coordinates of the block based on its shape and size
    const initialX = Math.floor(Constants.GRID_WIDTH /2);
-   const initialY = Math.min(...shape.map(square => square.y));
-   const block = shape.map(square => ({
+   const initialY = Math.min(...shape.map(square => square.y)); 
+   const block = shape.map(square => ({ //calculates its absolute coordinates by adding the initial x and y values to its relative coordinates. 
    x :square.x +initialX,
    y :square.y-initialY,
    }));
@@ -122,10 +122,12 @@ const falling = (square: Square[]): Square[] => {
   }));
 };
 
-function updateStoredSquares(squares: Square[], storedSquares: (null | true)[][], value: true | null): (null | true)[][] {
+function updateStoredSquares(squares: Square[], storedSquares: (null | true)[][], value: true | null): (null | true)[][] { //made using generative AI
   return storedSquares.map((row, rowIndex) =>
-    row.map((cell, columnIndex) =>
+    row.map((cell, columnIndex) => //maps over each row and cell in the input storedSquares array, checks if any of the input squares have the same row and column indices as the current cell.
       squares.some(sq => sq.y === rowIndex && sq.x === columnIndex) ? value : cell
+      // If there is an overlap between an input square and a stored square at that position, then the value of 
+      //that cell is updated with the specified value. Otherwise, it remains unchanged.
     )
   );
 }
@@ -203,17 +205,18 @@ const moveDown = (s: State): State => {
   };
 };
 
-function clearLines(s: State): [State, number] {
+function clearLines(s: State): [State, number] { //made using generative AI
   // Filter out any rows that are completely filled
   const updatedstoredSquares = s.storedSquares.filter(row => row.some(cell => cell === null));
 
   // Calculate the number of rows that were cleared
   const clearedLines = s.storedSquares.length - updatedstoredSquares.length;
 
-  // Create new empty rows to replace the cleared rows
+  // Creates new empty rows to replace the cleared rows by generating an array of arrays filled with null values.
   const newRows = Array.from({ length: clearedLines }, () => Array(Constants.GRID_WIDTH).fill(null));
 
-  // Create an updated state with the new game grid
+  // Creates an updated game state by replacing the storedSquares property with a new array containing 
+  // the new empty rows followed by the filtered array of non-empty rows.
   const updatedStoredSquares: State = {
     ...s,
     storedSquares: [...newRows, ...updatedstoredSquares],
@@ -224,11 +227,11 @@ function clearLines(s: State): [State, number] {
 }
 
 function checkGameEnd(state: State): boolean {
-  // Check if any cell in the top row of the game grid is filled
-  return state.storedSquares[0].some(cell => cell !== null);
+  // Check if any cell in the top row of the game grid is true
+  return state.storedSquares[0].some(cell => cell ===true);
 }
 
-function generateRandomSquare(s: State, clearedRowIndex: number): State {
+function generateRandomSquare(s: State, clearedRowIndex: number): State { //made with generative AI
   // Find all empty coordinates above the cleared row
   const emptyCoordinates: Coordinate[] = s.storedSquares
     .slice(5, clearedRowIndex)
@@ -257,7 +260,7 @@ function generateRandomSquare(s: State, clearedRowIndex: number): State {
   return { ...s, storedSquares: updatedstoredSquares };
 }
 
-const rotate = (s: State, direction: "left" | "right"): State => {
+const rotate = (s: State, direction: "left" | "right"): State => { //made with generative AI
   if (s.gameEnd) {
     return s;
   }
@@ -402,12 +405,12 @@ function tick(s: State): State {
 
 /** Rendering (side effects) */
 // Render functions
-const renderSquares = (svg: SVGGraphicsElement, s: State): void => {
+const renderSquares = (svg: SVGGraphicsElement, s: State): void => { //made using generative AI
   // Generate SVG elements for squares in the game state
-  const squareElements = s.storedSquares.reduce((acc, row, rowIndex) => {
-    const rowElements = row.reduce((acc2, cell, columnIndex) => {
+  const squareElements = s.storedSquares.reduce((acc, row, rowIndex) => { //reduces the storedSquares array to a flat array of SVG elements representing each filled square on the game grid
+    const rowElements = row.reduce((acc2, cell, columnIndex) => { // mapping over each row and cell in the storedSquares array and checking if the cell is true
       if (cell === true) {
-        const xCoordinate = columnIndex * Block.WIDTH;
+        const xCoordinate = columnIndex * Block.WIDTH; //calculates its x and y coordinates on the game grid
         const yCoordinate = rowIndex * Block.HEIGHT;
         const squareElement = createSvgElement(svg.namespaceURI, "rect", {
           height: `${Block.HEIGHT}`,
@@ -420,20 +423,20 @@ const renderSquares = (svg: SVGGraphicsElement, s: State): void => {
       }
       return acc2;
     }, [] as SVGElement[]);
-    return [...acc, ...rowElements];
+    return [...acc, ...rowElements]; // array of arrays of square elements is flattened into a single array of square elements
   }, [] as SVGElement[]);
-  squareElements.map(squareElement => svg.appendChild(squareElement));
+  squareElements.map(squareElement => svg.appendChild(squareElement)); //iterate over each square element and append it to the input SVG graphics element
 };
 
-const renderCurrentBlock = (svg: SVGGraphicsElement, s: State): void => {
+const renderCurrentBlock = (svg: SVGGraphicsElement, s: State): void => { //made using generative AI
   // Generate SVG elements for the current falling square
-  const currentBlockElements = s.currentBlock.map(square => {
+  const currentBlockElements = s.currentBlock.map(square => { //maps over each square in the currentBlock property of the game state
     const xCoordinate = square.x * Block.WIDTH;
     const yCoordinate = square.y * Block.HEIGHT;
     const squareElement = createSvgElement(svg.namespaceURI, "rect", {
       height: `${Block.HEIGHT}`,
       width: `${Block.WIDTH}`,
-      x: `${xCoordinate}`,
+      x: `${xCoordinate}`, //calculates its x and y coordinates on the game grid
       y: `${yCoordinate}`,
       style: "fill: green",
     });
@@ -442,7 +445,7 @@ const renderCurrentBlock = (svg: SVGGraphicsElement, s: State): void => {
   currentBlockElements.map(squareElement => svg.appendChild(squareElement));
 };
 
-const renderNextBlock = (svg: SVGGraphicsElement, s: State): void => {
+const renderNextBlock = (svg: SVGGraphicsElement, s: State): void => { //made using generative AI
   // Generate SVG elements for the next block
   const nextBlockElements = s.nextBlock.map(square => {
     const xCoordinate = square.x * Block.WIDTH;
