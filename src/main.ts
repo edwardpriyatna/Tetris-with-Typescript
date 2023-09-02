@@ -36,7 +36,6 @@ const Block = {
 
 /** User input */
 type Key = "KeyS" | "KeyA" | "KeyD" | "KeyQ" | "KeyE";
-
 type Event = "keydown" | "keyup" | "keypress";
 
 /** Utility functions */
@@ -294,27 +293,21 @@ function generateRandomSquare(s: State, clearedRowIndex: number): State {
 }
 
 const rotateLeft = (s: State): State => {
-  // Check if the game has ended
   if (s.gameEnd) {
-    // If the game has ended, return the current state without updating it
     return s;
   }
 
-  // Calculate the center of the current block
-  const [firstSquare] = s.currentSquare;
   const center = {
-    x: firstSquare.x,
-    y: firstSquare.y,
+    x: s.currentSquare[0].x,
+    y: s.currentSquare[0].y,
   };
 
-  // Rotate each square in the current block around the center
   const newCurrentSquare = s.currentSquare.map(square => {
     const x = center.x - center.y + square.y;
     const y = center.y + center.x - square.x;
     return { x, y };
   });
 
-  // Check if the rotated block is valid (i.e., not colliding with anything)
   const isValid = newCurrentSquare.every(
     square =>
       square.x >= 0 &&
@@ -324,37 +317,31 @@ const rotateLeft = (s: State): State => {
       !s.gameState[square.y][square.x]
   );
 
-  // If the rotated block is valid, update the state with the new block
   if (isValid) {
+    // Return a new state with the rotated block
     return { ...s, currentSquare: newCurrentSquare };
   }
 
-  // If the rotated block is not valid, return the current state without updating it
+  // Return the current state if the rotation is not valid
   return s;
 };
 
 const rotateRight = (s: State): State => {
-  // Check if the game has ended
   if (s.gameEnd) {
-    // If the game has ended, return the current state without updating it
     return s;
   }
 
-  // Calculate the center of the current block
-  const [firstSquare] = s.currentSquare;
   const center = {
-    x: firstSquare.x,
-    y: firstSquare.y,
+    x: s.currentSquare[0].x,
+    y: s.currentSquare[0].y,
   };
 
-  // Rotate each square in the current block around the center
   const newCurrentSquare = s.currentSquare.map(square => {
     const x = center.x + center.y - square.y;
     const y = center.y - center.x + square.x;
     return { x, y };
   });
 
-  // Check if the rotated block is valid (i.e., not colliding with anything)
   const isValid = newCurrentSquare.every(
     square =>
       square.x >= 0 &&
@@ -364,12 +351,12 @@ const rotateRight = (s: State): State => {
       !s.gameState[square.y][square.x]
   );
 
-  // If the rotated block is valid, update the state with the new block
   if (isValid) {
+    // Return a new state with the rotated block
     return { ...s, currentSquare: newCurrentSquare };
   }
 
-  // If the rotated block is not valid, return the current state without updating it
+  // Return the current state if the rotation is not valid
   return s;
 };
 
