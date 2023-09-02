@@ -402,58 +402,58 @@ function tick(s: State): State {
 
 /** Rendering (side effects) */
 // Render functions
-const renderSquares = (svg: SVGGraphicsElement, s: State): SVGElement[] => {
-  // Generate SVG elements for squares in the game state
-  const squareElements = s.storedSquares.reduce((acc, row, rowIndex) => {
-    const rowElements = row.reduce((acc2, cell, columnIndex) => {
+const renderSquares = (s: State) => {
+  // Generate elements for squares in the game state
+  const squareElements = s.storedSquares.reduce((acc: any[], row, rowIndex) => {
+    const rowElements = row.reduce((acc2: any[], cell, columnIndex) => {
       if (cell === true) {
         const xCoordinate = columnIndex * Block.WIDTH;
         const yCoordinate = rowIndex * Block.HEIGHT;
-        const squareElement = createSvgElement(svg.namespaceURI, "rect", {
+        const squareElement = {
           height: `${Block.HEIGHT}`,
           width: `${Block.WIDTH}`,
           x: `${xCoordinate}`,
           y: `${yCoordinate}`,
           style: "fill: green",
-        });
+        };
         return [...acc2, squareElement];
       }
       return acc2;
-    }, [] as SVGElement[]);
+    }, []);
     return [...acc, ...rowElements];
-  }, [] as SVGElement[]);
+  }, []);
   return squareElements;
 };
 
-const rendercurrentBlock = (svg: SVGGraphicsElement, s: State): SVGElement[] => {
-  // Generate SVG elements for the current falling square
+const renderCurrentBlock = (s: State) => {
+  // Generate elements for the current falling block
   const currentBlockElements = s.currentBlock.map(square => {
     const xCoordinate = square.x * Block.WIDTH;
     const yCoordinate = square.y * Block.HEIGHT;
-    const squareElement = createSvgElement(svg.namespaceURI, "rect", {
+    const squareElement = {
       height: `${Block.HEIGHT}`,
       width: `${Block.WIDTH}`,
       x: `${xCoordinate}`,
       y: `${yCoordinate}`,
       style: "fill: green",
-    });
+    };
     return squareElement;
   });
   return currentBlockElements;
 };
 
-const renderNextBlock = (svg: SVGGraphicsElement, s: State): SVGElement[] => {
-  // Generate SVG elements for the next block
+const renderNextBlock = (s: State) => {
+  // Generate elements for the next block
   const nextBlockElements = s.nextBlock.map(square => {
     const xCoordinate = square.x * Block.WIDTH;
     const yCoordinate = square.y * Block.HEIGHT;
-    const squareElement = createSvgElement(svg.namespaceURI, "rect", {
+    const squareElement = {
       height: `${Block.HEIGHT}`,
       width: `${Block.WIDTH}`,
       x: `${xCoordinate}`,
       y: `${yCoordinate}`,
       style: "fill: green",
-    });
+    };
     return squareElement;
   });
   return nextBlockElements;
@@ -461,26 +461,17 @@ const renderNextBlock = (svg: SVGGraphicsElement, s: State): SVGElement[] => {
 
 const renderLevel = (s: State) => {
   // Render the level
-  const levelText = document.querySelector("#levelText") as HTMLElement;
-  if (levelText) {
-    levelText.textContent = `${s.level}`;
-  }
+  return { textContent: `${s.level}` };
 };
 
 const renderScore = (s: State) => {
   // Render the score
-  const scoreText = document.querySelector("#scoreText") as HTMLElement;
-  if (scoreText) {
-    scoreText.textContent = `${s.score}`;
-  }
+  return { textContent: `${s.score}` };
 };
 
 const renderHighScore = (s: State) => {
   // Render the high score
-  const highScoreText = document.querySelector("#highScoreText") as HTMLElement;
-  if (highScoreText) {
-    highScoreText.textContent = `${s.highScore}`;
-  }
+  return { textContent: `${s.highScore}` };
 };
 /**
  * Displays a SVG element on the canvas. Brings to foreground.
@@ -570,36 +561,36 @@ export function main() {
    * @param s Current state
    */
   const render = (s: State) => {
-    // Clear the SVG canvas
-    svg.innerHTML = '';
-    preview.innerHTML = ''; // Clear the SVG preview
-  
     // Iterate through the game state and render squares as needed
-    const squareElements = renderSquares(svg, s);
-    squareElements.map(squareElement => svg.appendChild(squareElement));
+    const squareElements = renderSquares(s);
   
     // Render the currentBlock from the state
-    const currentBlockElements = rendercurrentBlock(svg, s);
-    currentBlockElements.map(squareElement => svg.appendChild(squareElement));
+    const currentBlockElements = renderCurrentBlock(s);
   
     // Render the next block in the preview
-    const nextBlockElements = renderNextBlock(preview, s);
-    nextBlockElements.map(squareElement => preview.appendChild(squareElement));
-
+    const nextBlockElements = renderNextBlock(s);
+  
     // Render the high score
-    renderHighScore(s);
-
-    renderLevel(s);
+    const highScoreTextContent = renderHighScore(s).textContent;
+  
+    // Render the level
+    const levelTextContent = renderLevel(s).textContent;
   
     // Render the score
-    renderScore(s);
+    const scoreTextContent = renderScore(s).textContent;
   
     // Show or hide the game over element
-    if (s.gameEnd) {
-      svg.appendChild(gameover);
-    } else {
-      gameover.remove();
-    }
+    const gameOverVisibility = s.gameEnd ? "visible" : "hidden";
+  
+    return {
+      squareElements,
+      currentBlockElements,
+      nextBlockElements,
+      highScoreTextContent,
+      levelTextContent,
+      scoreTextContent,
+      gameOverVisibility,
+    };
   };
   /** Observables and subscription */
   
