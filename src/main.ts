@@ -122,15 +122,15 @@ const falling = (square: Square[]): Square[] => {
   }));
 };
 
-function updateGameState(squares: Square[], gameState: (null | any)[][], value: boolean | null): (null | any)[][] {
-  return gameState.map((row, rowIndex) =>
+function updateStoredSquares(squares: Square[], storedSquares: (null | any)[][], value: boolean | null): (null | any)[][] {
+  return storedSquares.map((row, rowIndex) =>
     row.map((cell, columnIndex) =>
       squares.some(sq => sq.y === rowIndex && sq.x === columnIndex) ? value : cell
     )
   );
 }
 
-function checkCollision(square :Square[],gameState:(null|any)[][]):boolean{
+function checkCollision(square :Square[],storedSquares:(null|any)[][]):boolean{
   return square.some(sq=>{
   const{x,y}=sq;
 
@@ -140,7 +140,7 @@ function checkCollision(square :Square[],gameState:(null|any)[][]):boolean{
   }
 
   //Check if there's a block below the current square
-  if(gameState[y+1][x]!==null){
+  if(storedSquares[y+1][x]!==null){
   return true;
   }
 
@@ -157,8 +157,8 @@ const move = (s: State, direction: "left" | "right"): State => {
 
   const canMove = s.currentBlock.every(
     square =>
-      (direction === "left" && square.x > 0 && !s.gameState[square.y][square.x - 1]) ||
-      (direction === "right" && square.x < Constants.GRID_WIDTH - 1 && !s.gameState[square.y][square.x + 1])
+      (direction === "left" && square.x > 0 && !s.storedSquares[square.y][square.x - 1]) ||
+      (direction === "right" && square.x < Constants.GRID_WIDTH - 1 && !s.storedSquares[square.y][square.x + 1])
   );
 
   if (canMove) {
@@ -175,7 +175,7 @@ const move = (s: State, direction: "left" | "right"): State => {
 //calculateDownDistance function
 const calculateDownDistance=(s :State,distance=0):number=>{
   //Base case :if collision is detected ,return the distance
-  if(checkCollision(falling(s.currentBlock),s.gameState)){
+  if(checkCollision(falling(s.currentBlock),s.storedSquares)){
     return distance+1;
   }
   //Recursive case :increment distance and continue checking
@@ -205,32 +205,32 @@ const moveDown = (s: State): State => {
 
 function clearLines(s: State): [State, number] {
   // Filter out any rows that are completely filled
-  const updatedGameState = s.gameState.filter(row => row.some(cell => cell === null));
+  const updatedstoredSquares = s.storedSquares.filter(row => row.some(cell => cell === null));
 
   // Calculate the number of rows that were cleared
-  const clearedLines = s.gameState.length - updatedGameState.length;
+  const clearedLines = s.storedSquares.length - updatedstoredSquares.length;
 
   // Create new empty rows to replace the cleared rows
   const newRows = Array.from({ length: clearedLines }, () => Array(Constants.GRID_WIDTH).fill(null));
 
   // Create an updated state with the new game grid
-  const updatedState: State = {
+  const updatedStoredSquares: State = {
     ...s,
-    gameState: [...newRows, ...updatedGameState],
+    storedSquares: [...newRows, ...updatedstoredSquares],
   };
 
   // Return the updated state and the number of cleared lines
-  return [updatedState, clearedLines];
+  return [updatedStoredSquares, clearedLines];
 }
 
 function checkGameEnd(state: State): boolean {
   // Check if any cell in the top row of the game grid is filled
-  return state.gameState[0].some(cell => cell !== null);
+  return state.storedSquares[0].some(cell => cell !== null);
 }
 
 function generateRandomSquare(s: State, clearedRowIndex: number): State {
   // Find all empty coordinates above the cleared row
-  const emptyCoordinates: Coordinate[] = s.gameState
+  const emptyCoordinates: Coordinate[] = s.storedSquares
     .slice(5, clearedRowIndex)
     .flatMap((row, rowIndex) =>
       row.map((cell, cellIndex) => (cell === null ? { x: cellIndex, y: rowIndex + 5 } : null))
@@ -247,14 +247,14 @@ function generateRandomSquare(s: State, clearedRowIndex: number): State {
   const randomCoordinate = emptyCoordinates[randomIndex];
 
   // Add a new square to the game state at the chosen coordinate
-  const updatedGameState = s.gameState.map((row, rowIndex) =>
+  const updatedstoredSquares = s.storedSquares.map((row, rowIndex) =>
     row.map((cell, cellIndex) =>
       rowIndex === randomCoordinate.y && cellIndex === randomCoordinate.x ? true : cell
     )
   );
 
   // Return the updated state with the new square added to the game state
-  return { ...s, gameState: updatedGameState };
+  return { ...s, storedSquares: updatedstoredSquares };
 }
 
 const rotate = (s: State, direction: "left" | "right"): State => {
@@ -297,7 +297,7 @@ const rotate = (s: State, direction: "left" | "right"): State => {
       square.x < Constants.GRID_WIDTH &&
       square.y >= 0 &&
       square.y < Constants.GRID_HEIGHT &&
-      !s.gameState[square.y][square.x]
+      !s.storedSquares[square.y][square.x]
   );
 
   if (isValid) {
@@ -311,10 +311,10 @@ const rotate = (s: State, direction: "left" | "right"): State => {
 
 const restartGame = (state: State): State => {
   // Define the initial game state
-  const initialGameState = {
+  const initialstoredSquares = {
     ...state,
     gameEnd: false,
-    gameState: Array.from({ length: Constants.GRID_HEIGHT }, () =>
+    storedSquares: Array.from({ length: Constants.GRID_HEIGHT }, () =>
       Array(Constants.GRID_WIDTH).fill(null)
     ),
     currentBlock: generateRandomBlock(),
@@ -322,13 +322,13 @@ const restartGame = (state: State): State => {
     nextBlock: generateRandomBlock(),
     level: 0,
   };
-  return { ...initialGameState };
+  return { ...initialstoredSquares };
 };
 
 /** State processing */
 type State = Readonly<{
   gameEnd: boolean;
-  gameState: (null | any)[][];
+  storedSquares: (null | true)[][];
   currentBlock: Square[];
   score: number;
   nextBlock: Square[];
@@ -338,7 +338,7 @@ type State = Readonly<{
 
 const initialState: State = {
   gameEnd: false,
-  gameState: Array.from({ length: Constants.GRID_HEIGHT }, () =>
+  storedSquares: Array.from({ length: Constants.GRID_HEIGHT }, () =>
     Array(Constants.GRID_WIDTH).fill(null)
   ),
   currentBlock: generateRandomBlock(),
@@ -361,36 +361,36 @@ function tick(s: State): State {
     return s;
   }
 
-  const clearedGameState = updateGameState(s.currentBlock, s.gameState, null);
-  const hasCollisionOrAtBottom = checkCollision(s.currentBlock, clearedGameState);
+  const newStoredSquaress = updateStoredSquares(s.currentBlock, s.storedSquares, null);
+  const hasCollisionOrAtBottom = checkCollision(s.currentBlock, newStoredSquaress);
 
   // Only generate a new square if there is a collision or the square is at the bottom
   const newcurrentBlock = hasCollisionOrAtBottom ? s.nextBlock : falling(s.currentBlock);
   const newNextBlock = hasCollisionOrAtBottom ? generateRandomBlock() : s.nextBlock;
 
-  const filledGameState = hasCollisionOrAtBottom
-    ? updateGameState(s.currentBlock, clearedGameState, true)
-    : clearedGameState;
+  const filledstoredSquares = hasCollisionOrAtBottom
+    ? updateStoredSquares(s.currentBlock, newStoredSquaress, true)
+    : newStoredSquaress;
   
-  const [updatedState, clearedLines] = clearLines({ ...s, gameState: filledGameState });
+  const [updatedStoredSquares, clearedLines] = clearLines({ ...s, storedSquares: filledstoredSquares });
 
   // Generate a random square for each cleared line
-  const finalUpdatedState = Array.from({ length: clearedLines }, (_, i) => Constants.GRID_HEIGHT - clearedLines + i)
-    .reduce((state, rowIndex) => generateRandomSquare(state, rowIndex), updatedState);
+  const finalupdatedStoredSquares = Array.from({ length: clearedLines }, (_, i) => Constants.GRID_HEIGHT - clearedLines + i)
+    .reduce((state, rowIndex) => generateRandomSquare(state, rowIndex), updatedStoredSquares);
 
-  const newScore = finalUpdatedState.score + clearedLines;
+  const newScore = finalupdatedStoredSquares.score + clearedLines;
   
    // Update the high score if the new score is higher than the current high score
-   const newHighScore = Math.max(finalUpdatedState.highScore, newScore);
+   const newHighScore = Math.max(finalupdatedStoredSquares.highScore, newScore);
 
    // Update the level based on the number of lines cleared
-   const newLevel = finalUpdatedState.level + clearedLines;
+   const newLevel = finalupdatedStoredSquares.level + clearedLines;
 
    // Check if the game has ended after updating the state
-   const gameEnd = checkGameEnd(finalUpdatedState);
+   const gameEnd = checkGameEnd(finalupdatedStoredSquares);
 
    return {
-     ...finalUpdatedState,
+     ...finalupdatedStoredSquares,
      score: newScore,
      currentBlock: newcurrentBlock,
      nextBlock: newNextBlock,
@@ -404,7 +404,7 @@ function tick(s: State): State {
 // Render functions
 const renderSquares = (svg: SVGGraphicsElement, s: State): SVGElement[] => {
   // Generate SVG elements for squares in the game state
-  const squareElements = s.gameState.reduce((acc, row, rowIndex) => {
+  const squareElements = s.storedSquares.reduce((acc, row, rowIndex) => {
     const rowElements = row.reduce((acc2, cell, columnIndex) => {
       if (cell === true) {
         const xCoordinate = columnIndex * Block.WIDTH;
