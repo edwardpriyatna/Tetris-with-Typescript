@@ -328,6 +328,15 @@ const restartGame = (state: State): State => {
   return { ...initialstoredSquares };
 };
 
+const calculateGhostBlock = (s: State): Square[] => {
+  const downDistance = calculateDownDistance(s);
+  const newGhostBlock = s.currentBlock.map(square => ({
+    x: square.x,
+    y: square.y + downDistance,
+  }));
+  return newGhostBlock;
+};
+
 /** State processing */
 type State = Readonly<{
   gameEnd: boolean;
@@ -337,6 +346,7 @@ type State = Readonly<{
   nextBlock: Square[];
   level: number;
   highScore: number; // Add the "highScore" property
+  ghostBlock: Square[];
 }>;
 
 const initialState: State = {
@@ -349,6 +359,7 @@ const initialState: State = {
   nextBlock: generateRandomBlock(),
   level: 0,
   highScore: 0, // Initialize the "highScore" property
+  ghostBlock: [] as Square[],
 } as const;
 
 
@@ -380,6 +391,8 @@ function tick(s: State): State {
   // Generate a random square for each cleared line
   const finalupdatedStoredSquares = Array.from({ length: clearedLines }, (_, i) => Constants.GRID_HEIGHT - clearedLines + i)
     .reduce((state, rowIndex) => generateRandomSquare(state, rowIndex), updatedStoredSquares);
+  
+  const newGhostBlock = calculateGhostBlock(s);
 
   const newScore = finalupdatedStoredSquares.score + clearedLines;
   
@@ -400,6 +413,7 @@ function tick(s: State): State {
      gameEnd,
      highScore: newHighScore,
      level: newLevel, 
+     ghostBlock: newGhostBlock,
    };
 }
 
@@ -485,6 +499,24 @@ const renderHighScore = (s: State) => {
     highScoreText.textContent = `${s.highScore}`;
   }
 };
+
+const renderGhostBlock = (svg: SVGGraphicsElement, s: State): void => { //made using generative AI
+  // Generate SVG elements for the ghost block
+  const ghostBlockElements = s.ghostBlock.map(square => {
+    const xCoordinate = square.x * Block.WIDTH;
+    const yCoordinate = square.y * Block.HEIGHT;
+    const squareElement = createSvgElement(svg.namespaceURI, "rect", {
+      height: `${Block.HEIGHT}`,
+      width: `${Block.WIDTH}`,
+      x: `${xCoordinate}`,
+      y: `${yCoordinate}`,
+      style: "fill: rgba(0,255,0,0.5)", // Use a semi-transparent fill color
+    });
+    return squareElement;
+  });
+  ghostBlockElements.map(squareElement => svg.appendChild(squareElement));
+};
+
 /**
  * Displays a SVG element on the canvas. Brings to foreground.
  * @param elem SVG element to display
@@ -578,6 +610,7 @@ export function main() {
     preview.innerHTML = ''; // Clear the SVG preview
     renderSquares(svg, s);
     renderCurrentBlock(svg, s);
+    renderGhostBlock(svg, s);
     renderNextBlock(preview, s);
     renderHighScore(s);
     renderLevel(s);
