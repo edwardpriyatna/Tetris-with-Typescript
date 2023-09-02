@@ -34,7 +34,7 @@ const Block = {
 };
 
 /** User input */
-type Key = "KeyS" | "KeyA" | "KeyD" | "KeyQ" | "KeyE";
+type Key = "KeyS" | "KeyA" | "KeyD" | "KeyQ" | "KeyE" | "KeyR";
 type Event = "keydown" | "keyup" | "keypress";
 
 /** Utility functions */
@@ -311,6 +311,22 @@ const rotate = (s: State, direction: "left" | "right"): State => {
   return s;
 };
 
+const restartGame = (state: State): State => {
+  // Define the initial game state
+  const initialGameState = {
+    ...state,
+    gameEnd: false,
+    gameState: Array.from({ length: Constants.GRID_HEIGHT }, () =>
+      Array(Constants.GRID_WIDTH).fill(null)
+    ),
+    currentSquare: createSquareBlock(),
+    score: 0,
+    nextBlock: generateRandomBlock(),
+    level: 0,
+  };
+  return { ...initialGameState };
+};
+
 /** State processing */
 type State = Readonly<{
   gameEnd: boolean;
@@ -543,18 +559,7 @@ export function main() {
   );
   const rotateLeft$ = fromKey("KeyQ").pipe(map(() => (s: State) => rotate(s, "left")));
   const rotateRight$ = fromKey("KeyE").pipe(map(() => (s: State) => rotate(s, "right")));
-  const restart$ = fromEvent<KeyboardEvent>(document, "keypress").pipe(
-    filter(({ code }) => code === "KeyR"),
-    scan((highScore) => {
-      // Generate new random seed values for the random function
-      const newSeed = Math.floor(Math.random() * 1000000);
-      const newZ = Math.floor(Math.random() * 1000000);
-      random = lcg(newSeed, newZ);
-  
-      // Return a function that returns the initial state with the current high score
-      return () => ({ ...initialState, highScore });
-    }, 0)
-);
+  const restart$ = fromKey("KeyR");
 
   /** Observables */
   const tick$ = interval(Constants.TICK_RATE_MS);
@@ -607,7 +612,7 @@ export function main() {
     down$.pipe(map(() => moveDown)),
     rotateLeft$,
     rotateRight$,
-    restart$.pipe(map(() => () => initialState))
+    restart$.pipe(map(() => (state: State) => restartGame(state)))
   )
   .pipe(scan((s: State, action: (s: State) => State) => action(s), initialState))
     .subscribe((s: State) => {
