@@ -13,7 +13,7 @@ function lcg(seed: number) {
     return z / m;
   };
 }
-let random = lcg(Date.now());
+let random = lcg(Math.floor(Math.random() * 1000000)); // Use a random seed value
 
 /** Constants */
 const Viewport = {
@@ -292,6 +292,86 @@ function generateRandomSquare(s: State, clearedRowIndex: number): State {
   return { ...s, gameState: updatedGameState };
 }
 
+const rotateLeft = (s: State): State => {
+  // Check if the game has ended
+  if (s.gameEnd) {
+    // If the game has ended, return the current state without updating it
+    return s;
+  }
+
+  // Calculate the center of the current block
+  const [firstSquare] = s.currentSquare;
+  const center = {
+    x: firstSquare.x,
+    y: firstSquare.y,
+  };
+
+  // Rotate each square in the current block around the center
+  const newCurrentSquare = s.currentSquare.map(square => {
+    const x = center.x - center.y + square.y;
+    const y = center.y + center.x - square.x;
+    return { x, y };
+  });
+
+  // Check if the rotated block is valid (i.e., not colliding with anything)
+  const isValid = newCurrentSquare.every(
+    square =>
+      square.x >= 0 &&
+      square.x < Constants.GRID_WIDTH &&
+      square.y >= 0 &&
+      square.y < Constants.GRID_HEIGHT &&
+      !s.gameState[square.y][square.x]
+  );
+
+  // If the rotated block is valid, update the state with the new block
+  if (isValid) {
+    return { ...s, currentSquare: newCurrentSquare };
+  }
+
+  // If the rotated block is not valid, return the current state without updating it
+  return s;
+};
+
+const rotateRight = (s: State): State => {
+  // Check if the game has ended
+  if (s.gameEnd) {
+    // If the game has ended, return the current state without updating it
+    return s;
+  }
+
+  // Calculate the center of the current block
+  const [firstSquare] = s.currentSquare;
+  const center = {
+    x: firstSquare.x,
+    y: firstSquare.y,
+  };
+
+  // Rotate each square in the current block around the center
+  const newCurrentSquare = s.currentSquare.map(square => {
+    const x = center.x + center.y - square.y;
+    const y = center.y - center.x + square.x;
+    return { x, y };
+  });
+
+  // Check if the rotated block is valid (i.e., not colliding with anything)
+  const isValid = newCurrentSquare.every(
+    square =>
+      square.x >= 0 &&
+      square.x < Constants.GRID_WIDTH &&
+      square.y >= 0 &&
+      square.y < Constants.GRID_HEIGHT &&
+      !s.gameState[square.y][square.x]
+  );
+
+  // If the rotated block is valid, update the state with the new block
+  if (isValid) {
+    return { ...s, currentSquare: newCurrentSquare };
+  }
+
+  // If the rotated block is not valid, return the current state without updating it
+  return s;
+};
+
 /** State processing */
 type State = Readonly<{
   gameEnd: boolean;
@@ -330,7 +410,7 @@ function tick(s: State): State {
 
   // Only generate a new square if there is a collision or the square is at the bottom
   const newCurrentSquare = hasCollisionOrAtBottom ? s.nextBlock : falling(s.currentSquare);
-  const newNextBlock = hasCollisionOrAtBottom ? createSquareBlock() : s.nextBlock;
+  const newNextBlock = hasCollisionOrAtBottom ? generateRandomBlock() : s.nextBlock;
 
   const filledGameState = hasCollisionOrAtBottom
     ? updateGameState(s.currentSquare, clearedGameState, true)
@@ -502,11 +582,15 @@ export function main() {
   const left$ = fromKey("KeyA");
   const right$ = fromKey("KeyD");
   const down$ = fromKey("KeyS");
+  const rotateLeft$ = fromKey("KeyQ");
+  const rotateRight$ = fromKey("KeyE");
   const restart$ = fromEvent<KeyboardEvent>(document, "keypress").pipe(
     filter(({ code }) => code === "KeyR"),
     map(() => {
-      // Re-initialize the random function with a new seed value
-      random = lcg(Date.now());
+      // Generate a new random seed value for the random function
+      const newSeed = Math.floor(Math.random() * 1000000);
+      random = lcg(newSeed);
+  
       // Return a function that returns the initial state
       return () => initialState;
     })
@@ -563,6 +647,8 @@ export function main() {
     left$.pipe(map(() => moveLeft)),
     right$.pipe(map(() => moveRight)),
     down$.pipe(map(() => moveDown)),
+    rotateLeft$.pipe(map(() => rotateLeft)),
+    rotateRight$.pipe(map(() => rotateRight)),
     restart$.pipe(map(() => () => initialState)) // Add this line
   )
     .pipe(scan((s: State, action: (s: State) => State) => action(s), initialState))
