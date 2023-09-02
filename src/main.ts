@@ -399,7 +399,7 @@ function tick(s: State): State {
      nextBlock: newNextBlock,
      gameEnd,
      highScore: newHighScore,
-     level: newLevel, // Update the level
+     level: newLevel, 
    };
 }
 
