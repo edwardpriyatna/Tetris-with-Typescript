@@ -122,7 +122,7 @@ const falling = (square: Square[]): Square[] => {
   }));
 };
 
-function updateStoredSquares(squares: Square[], storedSquares: (null | any)[][], value: boolean | null): (null | any)[][] {
+function updateStoredSquares(squares: Square[], storedSquares: (null | true)[][], value: boolean | null): (null | true)[][] {
   return storedSquares.map((row, rowIndex) =>
     row.map((cell, columnIndex) =>
       squares.some(sq => sq.y === rowIndex && sq.x === columnIndex) ? value : cell
@@ -130,7 +130,7 @@ function updateStoredSquares(squares: Square[], storedSquares: (null | any)[][],
   );
 }
 
-function checkCollision(square :Square[],storedSquares:(null|any)[][]):boolean{
+function checkCollision(square :Square[],storedSquares:(null|true)[][]):boolean{
   return square.some(sq=>{
   const{x,y}=sq;
 
