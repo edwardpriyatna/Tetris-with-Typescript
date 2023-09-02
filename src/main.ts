@@ -606,8 +606,8 @@ export function main() {
    */
   const render = (s: State) => {
     // Clear the SVG canvas
-    svg.innerHTML = '';
-    preview.innerHTML = ''; // Clear the SVG preview
+    svg.innerHTML = ''; //clear the SVG screen
+    preview.innerHTML = ''; // Clear the preview
     renderSquares(svg, s);
     renderCurrentBlock(svg, s);
     renderGhostBlock(svg, s);
