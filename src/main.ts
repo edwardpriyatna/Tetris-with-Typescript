@@ -545,15 +545,15 @@ export function main() {
   const rotateRight$ = fromKey("KeyE").pipe(map(() => (s: State) => rotate(s, "right")));
   const restart$ = fromEvent<KeyboardEvent>(document, "keypress").pipe(
     filter(({ code }) => code === "KeyR"),
-    map(() => {
+    scan((highScore) => {
       // Generate new random seed values for the random function
       const newSeed = Math.floor(Math.random() * 1000000);
       const newZ = Math.floor(Math.random() * 1000000);
       random = lcg(newSeed, newZ);
   
-      // Return a function that returns the initial state
-      return () => initialState;
-    })
+      // Return a function that returns the initial state with the current high score
+      return () => ({ ...initialState, highScore });
+    }, 0)
 );
 
   /** Observables */
