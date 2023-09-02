@@ -277,23 +277,22 @@ const rotate = (s: State, direction: "left" | "right"): State => {
     return s;
   }
 
+  // Find the center of the current block
   const center = {
-    x: s.currentSquare[0].x,
-    y: s.currentSquare[0].y,
+    x: Math.round(s.currentSquare.reduce((acc, square) => acc + square.x, 0) / s.currentSquare.length),
+    y: Math.round(s.currentSquare.reduce((acc, square) => acc + square.y, 0) / s.currentSquare.length),
   };
 
+  // Rotate the current block around its center
   const newCurrentSquare = s.currentSquare.map(square => {
-    const x =
-      direction === "left"
-        ? center.x - center.y + square.y
-        : center.x + center.y - square.y;
-    const y =
-      direction === "left"
-        ? center.y + center.x - square.x
-        : center.y - center.x + square.x;
+    const dx = square.x - center.x;
+    const dy = square.y - center.y;
+    const x = direction === "left" ? center.x - dy : center.x + dy;
+    const y = direction === "left" ? center.y + dx : center.y - dx;
     return { x, y };
   });
 
+  // Check if the rotated block is within the game grid and does not collide with other blocks
   const isValid = newCurrentSquare.every(
     square =>
       square.x >= 0 &&
@@ -328,7 +327,7 @@ const initialState: State = {
   gameState: Array.from({ length: Constants.GRID_HEIGHT }, () =>
     Array(Constants.GRID_WIDTH).fill(null)
   ),
-  currentSquare: generateRandomBlock(),
+  currentSquare: createSquareBlock(),
   score: 0,
   nextBlock: generateRandomBlock(),
   level: 0,
