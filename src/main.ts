@@ -1,19 +1,18 @@
 import "./style.css";
 import { fromEvent, interval, merge } from "rxjs";
-import { map, filter, scan } from "rxjs/operators";
-function lcg(seed: number) {
+import { map, filter, scan, throttleTime } from "rxjs/operators";
+function lcg(seed: number, z: number) {
   // LCG parameters for Numerical Recipes
   const m = 2 ** 32;
   const a = 1664525;
   const c = 1013904223;
 
-  let z = seed;
   return () => {
     z = (a * z + c) % m;
-    return z / m;
+    return [z / m, z];
   };
 }
-let random = lcg(Math.floor(Math.random() * 1000000)); // Use a random seed value
+let random = lcg(Math.floor(Math.random() * 1000000), Math.floor(Math.random() * 1000000)); // Use a random seed value
 
 /** Constants */
 const Viewport = {
@@ -112,21 +111,24 @@ function generateRandomBlock() {
     
 ];
 
-  // Generate a random block type
-  const shapeIndex = Math.floor(random() * shapes.length);
-  const shape = shapes[shapeIndex];
+   // Generate a random block type
+   let [randomValue, z] = random();
+   const shapeIndex = Math.floor(randomValue * shapes.length);
+   const shape = shapes[shapeIndex];
+   random = lcg(Math.floor(Math.random() *100000),z);
 
-  // Calculate the initial coordinates of the block based on its shape and size
-  const initialX = Math.floor(Constants.GRID_WIDTH /2);
-  const initialY = Math.min(...shape.map(square => square.y));
-  const block = shape.map(square => ({
-  x :square.x +initialX,
-  y :square.y-initialY,
-  }));
+   // Calculate the initial coordinates of the block based on its shape and size
+   const initialX = Math.floor(Constants.GRID_WIDTH /2);
+   const initialY = Math.min(...shape.map(square => square.y));
+   const block = shape.map(square => ({
+   x :square.x +initialX,
+   y :square.y-initialY,
+   }));
 
-  // Return the coordinates of the new block
-  return block;
+   // Return the coordinates of the new block
+   return block;
 }
+
 
 const falling = (square: Square[]): Square[] => {
   return square.map(sq => ({
@@ -316,8 +318,9 @@ type State = Readonly<{
   gameState: (null | any)[][];
   currentSquare: Square[];
   score: number;
-  nextBlock: Square[]; // Add the "nextBlock" property
+  nextBlock: Square[];
   level: number;
+  highScore: number; // Add the "highScore" property
 }>;
 
 const initialState: State = {
@@ -327,9 +330,11 @@ const initialState: State = {
   ),
   currentSquare: generateRandomBlock(),
   score: 0,
-  nextBlock: generateRandomBlock(), // Initialize the "nextBlock" property
-  level: 0
+  nextBlock: generateRandomBlock(),
+  level: 0,
+  highScore: 0, // Initialize the "highScore" property
 } as const;
+
 
 /**
 * Updates the state by proceeding with one time step.
@@ -361,19 +366,25 @@ function tick(s: State): State {
     .reduce((state, rowIndex) => generateRandomSquare(state, rowIndex), updatedState);
 
   const newScore = finalUpdatedState.score + clearedLines;
-  const newLevel= finalUpdatedState.level + clearedLines;
+  
+   // Update the high score if the new score is higher than the current high score
+   const newHighScore = Math.max(finalUpdatedState.highScore, newScore);
 
-  // Check if the game has ended after updating the state
-  const gameEnd = checkGameEnd(finalUpdatedState);
+   // Update the level based on the number of lines cleared
+   const newLevel = finalUpdatedState.level + clearedLines;
 
-  return {
-    ...finalUpdatedState,
-    score: newScore,
-    currentSquare: newCurrentSquare,
-    nextBlock: newNextBlock,
-    gameEnd,
-    level: newLevel
-  };
+   // Check if the game has ended after updating the state
+   const gameEnd = checkGameEnd(finalUpdatedState);
+
+   return {
+     ...finalUpdatedState,
+     score: newScore,
+     currentSquare: newCurrentSquare,
+     nextBlock: newNextBlock,
+     gameEnd,
+     highScore: newHighScore,
+     level: newLevel, // Update the level
+   };
 }
 
 /** Rendering (side effects) */
@@ -418,21 +429,6 @@ const renderCurrentSquare = (svg: SVGGraphicsElement, s: State): SVGElement[] =>
   return currentSquareElements;
 };
 
-const renderScore = (svg: SVGGraphicsElement, score: number): SVGElement => {
-  // Create an SVG text element
-  const scoreTextElement = createSvgElement(svg.namespaceURI, "text", {
-    x: `${Block.WIDTH * Constants.GRID_WIDTH + 10}`,
-    y: `${Block.HEIGHT * (Constants.GRID_HEIGHT - 1)}`,
-    fill: "white",
-  });
-  
-  // Set the text content to display the current score
-  scoreTextElement.textContent = `Score: ${score}`;
-  
-  // Return the text element
-  return scoreTextElement;
-};
-
 const renderNextBlock = (svg: SVGGraphicsElement, s: State): SVGElement[] => {
   // Generate SVG elements for the next block
   const nextBlockElements = s.nextBlock.map(square => {
@@ -450,6 +446,29 @@ const renderNextBlock = (svg: SVGGraphicsElement, s: State): SVGElement[] => {
   return nextBlockElements;
 };
 
+const renderLevel = (s: State) => {
+  // Render the level
+  const levelText = document.querySelector("#levelText") as HTMLElement;
+  if (levelText) {
+    levelText.textContent = `${s.level}`;
+  }
+};
+
+const renderScore = (s: State) => {
+  // Render the score
+  const scoreText = document.querySelector("#scoreText") as HTMLElement;
+  if (scoreText) {
+    scoreText.textContent = `${s.score}`;
+  }
+};
+
+const renderHighScore = (s: State) => {
+  // Render the high score
+  const highScoreText = document.querySelector("#highScoreText") as HTMLElement;
+  if (highScoreText) {
+    highScoreText.textContent = `${s.highScore}`;
+  }
+};
 /**
  * Displays a SVG element on the canvas. Brings to foreground.
  * @param elem SVG element to display
@@ -519,15 +538,19 @@ export function main() {
     key$.pipe(filter(({ code }) => code === keyCode));
   const left$ = fromKey("KeyA").pipe(map(() => (s: State) => move(s, "left")));
   const right$ = fromKey("KeyD").pipe(map(() => (s: State) => move(s, "right")));
-  const down$ = fromKey("KeyS");
+  const down$ = fromKey("KeyS").pipe(
+    throttleTime(100), // Add a delay of 100ms between successive 's' key presses
+    map(() => moveDown)
+  );
   const rotateLeft$ = fromKey("KeyQ").pipe(map(() => (s: State) => rotate(s, "left")));
   const rotateRight$ = fromKey("KeyE").pipe(map(() => (s: State) => rotate(s, "right")));
   const restart$ = fromEvent<KeyboardEvent>(document, "keypress").pipe(
     filter(({ code }) => code === "KeyR"),
     map(() => {
-      // Generate a new random seed value for the random function
+      // Generate new random seed values for the random function
       const newSeed = Math.floor(Math.random() * 1000000);
-      random = lcg(newSeed);
+      const newZ = Math.floor(Math.random() * 1000000);
+      random = lcg(newSeed, newZ);
   
       // Return a function that returns the initial state
       return () => initialState;
@@ -560,17 +583,14 @@ export function main() {
     // Render the next block in the preview
     const nextBlockElements = renderNextBlock(preview, s);
     nextBlockElements.map(squareElement => preview.appendChild(squareElement));
+
+    // Render the high score
+    renderHighScore(s);
+
+    renderLevel(s);
   
     // Render the score
-    const scoreText = document.querySelector("#scoreText") as HTMLElement; // Properly select the scoreText element
-    if (scoreText) {
-      scoreText.textContent = `${s.score}`; 
-    }
-
-    const levelText = document.querySelector("#levelText") as HTMLElement; // Properly select the levelText element
-    if (levelText) {
-      levelText.textContent = `${s.level}`; 
-    }
+    renderScore(s);
   
     // Show or hide the game over element
     if (s.gameEnd) {
