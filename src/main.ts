@@ -140,7 +140,7 @@ function checkCollision(square :Square[],storedSquares:(null|true)[][]):boolean{
   }
 
   //Check if there's a block below the current square
-  if(storedSquares[y+1][x]!==null){
+  if(storedSquares[y+1][x]===true){
   return true;
   }
 
