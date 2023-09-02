@@ -364,7 +364,7 @@ function tick(s: State): State {
     return s;
   }
 
-  const newStoredSquaress = updateStoredSquares(s.currentBlock, s.storedSquares, null);
+  const newStoredSquaress = updateStoredSquares(s.currentBlock, s.storedSquares, null); //assume currentBlock falls so we need to update state
   const hasCollisionOrAtBottom = checkCollision(s.currentBlock, newStoredSquaress);
 
   // Only generate a new square if there is a collision or the square is at the bottom
