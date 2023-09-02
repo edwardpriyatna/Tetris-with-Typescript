@@ -319,7 +319,7 @@ const restartGame = (state: State): State => {
     gameState: Array.from({ length: Constants.GRID_HEIGHT }, () =>
       Array(Constants.GRID_WIDTH).fill(null)
     ),
-    currentSquare: createSquareBlock(),
+    currentSquare: generateRandomBlock(),
     score: 0,
     nextBlock: generateRandomBlock(),
     level: 0,
@@ -343,7 +343,7 @@ const initialState: State = {
   gameState: Array.from({ length: Constants.GRID_HEIGHT }, () =>
     Array(Constants.GRID_WIDTH).fill(null)
   ),
-  currentSquare: createSquareBlock(),
+  currentSquare: generateRandomBlock(),
   score: 0,
   nextBlock: generateRandomBlock(),
   level: 0,
