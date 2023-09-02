@@ -1,18 +1,6 @@
 import "./style.css";
 import { fromEvent, interval, merge } from "rxjs";
 import { map, filter, scan, throttleTime } from "rxjs/operators";
-function lcg(seed: number, z: number) {
-  // LCG parameters for Numerical Recipes
-  const m = 2 ** 32;
-  const a = 1664525;
-  const c = 1013904223;
-
-  return () => {
-    z = (a * z + c) % m;
-    return [z / m, z];
-  };
-}
-let random = lcg(Math.floor(Math.random() * 1000000), Math.floor(Math.random() * 1000000)); // Use a random seed value
 
 /** Constants */
 const Viewport = {
@@ -96,7 +84,7 @@ function generateRandomBlock() {
     ],
     // T-block
     [
-      { x:-1,y :0},
+      {x:-1,y :0},
       {x :0,y :-1},
       {x :0,y :0},
       {x :1,y :0}
@@ -111,11 +99,9 @@ function generateRandomBlock() {
     
 ];
 
-   // Generate a random block type
-   let [randomValue, z] = random();
-   const shapeIndex = Math.floor(randomValue * shapes.length);
+   // Generate a random block type using Math.random()
+   const shapeIndex = Math.floor(Math.random() * shapes.length);
    const shape = shapes[shapeIndex];
-   random = lcg(Math.floor(Math.random() *100000),z);
 
    // Calculate the initial coordinates of the block based on its shape and size
    const initialX = Math.floor(Constants.GRID_WIDTH /2);
@@ -277,22 +263,35 @@ const rotate = (s: State, direction: "left" | "right"): State => {
     return s;
   }
 
-  // Find the center of the current block
+  // Check if the current block is a square block
+  const isSquareBlock = s.currentSquare.every(
+    square =>
+      Math.abs(square.x - s.currentSquare[0].x) <= 1 &&
+      Math.abs(square.y - s.currentSquare[0].y) <= 1
+  );
+
+  // If the current block is a square block, do not perform the rotation
+  if (isSquareBlock) {
+    return s;
+  }
+
   const center = {
-    x: Math.round(s.currentSquare.reduce((acc, square) => acc + square.x, 0) / s.currentSquare.length),
-    y: Math.round(s.currentSquare.reduce((acc, square) => acc + square.y, 0) / s.currentSquare.length),
+    x: s.currentSquare[0].x,
+    y: s.currentSquare[0].y,
   };
 
-  // Rotate the current block around its center
   const newCurrentSquare = s.currentSquare.map(square => {
-    const dx = square.x - center.x;
-    const dy = square.y - center.y;
-    const x = direction === "left" ? center.x - dy : center.x + dy;
-    const y = direction === "left" ? center.y + dx : center.y - dx;
+    const x =
+      direction === "left"
+        ? center.x - center.y + square.y
+        : center.x + center.y - square.y;
+    const y =
+      direction === "left"
+        ? center.y + center.x - square.x
+        : center.y - center.x + square.x;
     return { x, y };
   });
 
-  // Check if the rotated block is within the game grid and does not collide with other blocks
   const isValid = newCurrentSquare.every(
     square =>
       square.x >= 0 &&
