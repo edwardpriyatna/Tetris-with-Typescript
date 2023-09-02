@@ -35,7 +35,8 @@ const Block = {
 };
 
 /** User input */
-type Key = "KeyS" | "KeyA" | "KeyD";
+type Key = "KeyS" | "KeyA" | "KeyD" | "KeyQ" | "KeyE";
+
 type Event = "keydown" | "keyup" | "keypress";
 
 /** Utility functions */
