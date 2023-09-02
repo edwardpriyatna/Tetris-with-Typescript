@@ -44,7 +44,7 @@ function createSquareBlock(): Square[] {
   return squares;
 }
 
-function generateRandomBlock() { //made using generative AI
+function generateRandomBlock() {
   // Define the shapes of the different Tetris blocks
   const shapes = [
     // I-block
@@ -122,7 +122,7 @@ const falling = (square: Square[]): Square[] => {
   }));
 };
 
-function updateStoredSquares(squares: Square[], storedSquares: (null | true)[][], value: true | null): (null | true)[][] { //made using generative AI
+function updateStoredSquares(squares: Square[], storedSquares: (null | true)[][], value: true | null): (null | true)[][] { //entire function made using generative AI
   return storedSquares.map((row, rowIndex) =>
     row.map((cell, columnIndex) => //maps over each row and cell in the input storedSquares array, checks if any of the input squares have the same row and column indices as the current cell.
       squares.some(sq => sq.y === rowIndex && sq.x === columnIndex) ? value : cell
@@ -205,7 +205,7 @@ const moveDown = (s: State): State => {
   };
 };
 
-function clearLines(s: State): [State, number] { //made using generative AI
+function clearLines(s: State): [State, number] { //entire function made using generative AI
   // Filter out any rows that are completely filled
   const updatedstoredSquares = s.storedSquares.filter(row => row.some(cell => cell === null));
 
@@ -231,7 +231,7 @@ function checkGameEnd(state: State): boolean {
   return state.storedSquares[0].some(cell => cell ===true);
 }
 
-function generateRandomSquare(s: State, clearedRowIndex: number): State { //made with generative AI
+function generateRandomSquare(s: State, clearedRowIndex: number): State { //entire function made with generative AI
   // Find all empty coordinates above the cleared row
   const emptyCoordinates: Coordinate[] = s.storedSquares
     .slice(5, clearedRowIndex)
@@ -260,7 +260,7 @@ function generateRandomSquare(s: State, clearedRowIndex: number): State { //made
   return { ...s, storedSquares: updatedstoredSquares };
 }
 
-const rotate = (s: State, direction: "left" | "right"): State => { //made with generative AI
+const rotate = (s: State, direction: "left" | "right"): State => { //entire function made with generative AI
   if (s.gameEnd) {
     return s;
   }
@@ -375,16 +375,16 @@ function tick(s: State): State {
     return s;
   }
 
-  const newStoredSquaress = updateStoredSquares(s.currentBlock, s.storedSquares, null); //assume currentBlock falls so we need to update state
-  const hasCollisionOrAtBottom = checkCollision(s.currentBlock, newStoredSquaress);
+  const newStoredSquares = updateStoredSquares(s.currentBlock, s.storedSquares, null); //assume currentBlock falls so we need to update state
+  const hasCollisionOrAtBottom = checkCollision(s.currentBlock, newStoredSquares);
 
   // Only generate a new square if there is a collision or the square is at the bottom
   const newcurrentBlock = hasCollisionOrAtBottom ? s.nextBlock : falling(s.currentBlock);
   const newNextBlock = hasCollisionOrAtBottom ? generateRandomBlock() : s.nextBlock;
 
   const filledstoredSquares = hasCollisionOrAtBottom
-    ? updateStoredSquares(s.currentBlock, newStoredSquaress, true)
-    : newStoredSquaress;
+    ? updateStoredSquares(s.currentBlock, newStoredSquares, true)
+    : newStoredSquares;
   
   const [updatedStoredSquares, clearedLines] = clearLines({ ...s, storedSquares: filledstoredSquares });
 
@@ -419,7 +419,7 @@ function tick(s: State): State {
 
 /** Rendering (side effects) */
 // Render functions
-const renderSquares = (svg: SVGGraphicsElement, s: State): void => { //made using generative AI
+const renderSquares = (svg: SVGGraphicsElement, s: State): void => { //entire function made using generative AI
   // Generate SVG elements for squares in the game state
   const squareElements = s.storedSquares.reduce((acc, row, rowIndex) => { //reduces the storedSquares array to a flat array of SVG elements representing each filled square on the game grid
     const rowElements = row.reduce((acc2, cell, columnIndex) => { // mapping over each row and cell in the storedSquares array and checking if the cell is true
@@ -442,7 +442,7 @@ const renderSquares = (svg: SVGGraphicsElement, s: State): void => { //made usin
   squareElements.map(squareElement => svg.appendChild(squareElement)); //iterate over each square element and append it to the input SVG graphics element
 };
 
-const renderCurrentBlock = (svg: SVGGraphicsElement, s: State): void => { //made using generative AI
+const renderCurrentBlock = (svg: SVGGraphicsElement, s: State): void => { //entire function made using generative AI
   // Generate SVG elements for the current falling square
   const currentBlockElements = s.currentBlock.map(square => { //maps over each square in the currentBlock property of the game state
     const xCoordinate = square.x * Block.WIDTH;
@@ -459,7 +459,7 @@ const renderCurrentBlock = (svg: SVGGraphicsElement, s: State): void => { //made
   currentBlockElements.map(squareElement => svg.appendChild(squareElement));
 };
 
-const renderNextBlock = (svg: SVGGraphicsElement, s: State): void => { //made using generative AI
+const renderNextBlock = (svg: SVGGraphicsElement, s: State): void => { //entire function made using generative AI
   // Generate SVG elements for the next block
   const nextBlockElements = s.nextBlock.map(square => {
     const xCoordinate = square.x * Block.WIDTH;
@@ -500,7 +500,7 @@ const renderHighScore = (s: State) => {
   }
 };
 
-const renderGhostBlock = (svg: SVGGraphicsElement, s: State): void => { //made using generative AI
+const renderGhostBlock = (svg: SVGGraphicsElement, s: State): void => { //entire function made using generative AI
   // Generate SVG elements for the ghost block
   const ghostBlockElements = s.ghostBlock.map(square => {
     const xCoordinate = square.x * Block.WIDTH;
