@@ -539,7 +539,7 @@ export function main() {
   const left$ = fromKey("KeyA").pipe(map(() => (s: State) => move(s, "left")));
   const right$ = fromKey("KeyD").pipe(map(() => (s: State) => move(s, "right")));
   const down$ = fromKey("KeyS").pipe(
-    throttleTime(100), // Add a delay of 100ms between successive 's' key presses
+    throttleTime(400), // Add a delay of 400ms between successive 's' key presses
     map(() => moveDown)
   );
   const rotateLeft$ = fromKey("KeyQ").pipe(map(() => (s: State) => rotate(s, "left")));
